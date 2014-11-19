@@ -6,6 +6,7 @@ from StringIO import StringIO
 from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
 
 
+
 class WebSocketsServer(ThreadingMixIn, TCPServer):
 
 	allow_reuse_address = True
@@ -17,9 +18,7 @@ class WebSocketsServer(ThreadingMixIn, TCPServer):
 		self.port=port
 		TCPServer.__init__(self, (host, port), WebSocketHandler)
 
-
 	# API
-
 	def run_forever(self):
 		try:
 			print("Listening on port %d for clients.." % self.port)
@@ -31,23 +30,31 @@ class WebSocketsServer(ThreadingMixIn, TCPServer):
 			print("ERROR: WebSocketsServer: "+str(e))
 			exit(1)
 
-	def new_client(self):  # overriden by user
+	def new_client(self):       # overriden by user
 		pass
 		
-	def client_left(self): # overriden by user
+	def client_left(self):      # overriden by user
+		pass
+		
+	def message_received(self): # overriden by user
 		pass
 
+	# These are called by user to override the above
 	def set_fn_new_client(self, fn):
 		self.new_client=fn
-
 	def set_fn_client_left(self, fn):
 		self.client_left=fn
+	def set_fn_message_received(self, fn):
+		self.message_received=fn
 
 	def send_message(self, client_id, msg):
 		self._unicast_(client_id, msg)
 		
 	def send_message_to_all(self, msg):
 		self._multicast_(msg)
+		
+	def _message_received_(self, handler, msg):
+		self.message_received(self.handler_to_client(handler), msg)
 
 	def _new_client_(self, handler):
 		id=1
@@ -74,11 +81,10 @@ class WebSocketsServer(ThreadingMixIn, TCPServer):
 		for client in self.clients:
 			self._unicast_(client['id'], msg)
 		
-	def id_to_handler(id):
+	def handler_to_client(self, handler):
 		for client in self.clients:
-			if client['id'] == id:
-				return client['handler']
-		return None
+			if client['handler'] == handler:
+				return client
 
 
 
@@ -104,15 +110,17 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def read_next_message(self):
 		length = ord(self.rfile.read(2)[1]) & 127
+		#print(length)
 		if length == 126:
 			length = struct.unpack(">H", self.rfile.read(2))[0]
 		elif length == 127:
 			length = struct.unpack(">Q", self.rfile.read(8))[0]
+		#print("length after unpack", length)
 		masks = [ord(byte) for byte in self.rfile.read(4)]
 		decoded = ""
 		for char in self.rfile.read(length):
 			decoded += chr(ord(char) ^ masks[len(decoded) % 4])
-		self.on_message(decoded)
+		self.server._message_received_(self, decoded)
 
 	def send_message(self, message):
 		self.request.send(chr(129))
@@ -141,6 +149,6 @@ class WebSocketHandler(StreamRequestHandler):
 		response += 'Sec-WebSocket-Accept: %s\r\n\r\n' % digest
 		self.handshake_done = self.request.send(response)
 		self.server._new_client_(self) # register handler for client
-
-	def on_message(self, message):
-		print(message)
+		
+	def finish(self):
+		print("finish")
