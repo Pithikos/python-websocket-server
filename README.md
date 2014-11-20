@@ -4,11 +4,18 @@ Websockets Server
 A simple fully working WebsocketsServer in Python (with no dependencies)
 
 
+Usage
+=======================
+You can get a feel of how to use the websocket server by running
+
+    python server.py
+    
+Then you need to connect from a client. Use the client.html file to connect
+by using your browser's websocket implementation.
+
 
 API
------------------------
-
-
+=======================
 
 **Properties**
 clients this is a a list of dictionaries of type { 'id': client_id, 'handler': client_handler }
