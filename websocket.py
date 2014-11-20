@@ -58,6 +58,7 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 	#     'address' : (addr, port)
 	#    }
 	clients=[]
+	id_counter=0
 
 	def __init__(self, port, host='localhost'):
 		self.port=port
@@ -67,11 +68,9 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 		self.message_received(self.handler_to_client(handler), msg)
 
 	def _new_client_(self, handler):
-		id=1
-		if len(self.clients) > 0:
-			id=len(self.clients)+1
+		self.id_counter += 1
 		client={
-			'id'      : id,
+			'id'      : self.id_counter,
 			'handler' : handler,
 			'address' : handler.client_address
 		}
@@ -116,30 +115,23 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def handle(self):
 		while self.keep_alive:
-			print(self.keep_alive)
 			if not self.handshake_done:
 				self.handshake()
 			else:
 				self.read_next_message()
 
 	def read_next_message(self):
-		length = ord(self.rfile.read(2)[1]) & 127
+		if ord(self.rfile.read(1)) == 136:
+			self.keep_alive = False
+			return
+		length = ord(self.rfile.read(1)) & 127
 		if length == 126:
 			lengih = struct.unpack(">H", self.rfile.read(2))[0]
 		elif length == 127:
 			length = struct.unpack(">Q", self.rfile.read(8))[0]
 		masks = [ord(byte) for byte in self.rfile.read(4)]
 		decoded = ""
-		data=self.rfile.read(length)
-
-		# handling protocol spec v76 (old non-hybi)
-		if length == 2 and \
-			ord(data[0]) ^ masks[0] == 3 and \
-		    ord(data[1]) ^ masks[1] == 233:
-				self.keep_alive = False
-				return
-
-		for char in data:
+		for char in self.rfile.read(length):
 			char=ord(char) ^ masks[len(decoded) % 4]
 			decoded += chr(char)
 		self.server._message_received_(self, decoded)
@@ -164,13 +156,13 @@ class WebSocketHandler(StreamRequestHandler):
 			return
 		key = headers['Sec-WebSocket-Key']
 		digest = b64encode(sha1(key + self.magic).hexdigest().decode('hex'))
-		response = 'HTTP/1.1 101 Switching Protocols\r\n'
-		response += 'Upgrade: websocket\r\n'
-		response += 'Connection: Upgrade\r\n'
-		response += 'Sec-WebSocket-Accept: %s\r\n\r\n' % digest
+		response = \
+		  'HTTP/1.1 101 Switching Protocols\r\n'\
+		  'Upgrade: websocket\r\n'\
+		  'Connection: Upgrade\r\n'\
+		  'Sec-WebSocket-Accept: %s\r\n\r\n' % digest
 		self.handshake_done = self.request.send(response)
 		self.server._new_client_(self)
 		
 	def finish(self):
 		self.server._client_left_(self)
-		print("Closing connection")
