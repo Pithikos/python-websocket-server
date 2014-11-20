@@ -25,9 +25,9 @@ Then use the documented API below to manage the behaviour of your server.
 API
 =======================
 
-The API is simply methods and properties of an WebSocketsServer instance.
+The API is simply methods and properties of a WebSocketsServer instance.
 
-**WebSocketsServer Properties**
+**Properties**
 
 | Property | Description          |
 |----------|----------------------|
