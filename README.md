@@ -45,10 +45,10 @@ client = {
 
 **Methods**
 
-| Method               | Description                                                                         | Takes           | Gives |
-|----------------------|-------------------------------------------------------------------------------------|-----------------|-------|
-| set_fn_new_client()  | Sets a callback function that will be called for every new client connecting to us  | function        | None  |
-| set_fn_client_left() | Sets a callback function that will be called for every client disconnecting from us | function        | None  |
-| send_message()       | Sends a message to a specific client. The message is a simple string.               | client, message | None  |
-|                      | Sends a message to all connected clients. The message is a simple string.           | message         | None  |
+| Method                | Description                                                                         | Takes           | Gives |
+|-----------------------|-------------------------------------------------------------------------------------|-----------------|-------|
+| set_fn_new_client()   | Sets a callback function that will be called for every new client connecting to us  | function        | None  |
+| set_fn_client_left()  | Sets a callback function that will be called for every client disconnecting from us | function        | None  |
+| send_message()        | Sends a message to a specific client. The message is a simple string.               | client, message | None  |
+| send_message_to_all() | Sends a message to all connected clients. The message is a simple string.           | message         | None  |
 
