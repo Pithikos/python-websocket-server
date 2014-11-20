@@ -1,7 +1,8 @@
 Websockets Server
 =======================
 
-A simple fully working WebsocketsServer in Python (with no dependencies)
+A simple WebsocketsServer in Python which doesn't need any dependencies.
+
 
 
 Usage
@@ -14,25 +15,36 @@ Then you need to connect from a client. Use the client.html file to connect
 by using your browser's websocket implementation.
 
 
+Using on your project
+=======================
+In order to use the websocket server in your project, simply
+copy `websocket.py` to your project and `from websocket import WebSocketsServer`.
+Then use the documented API below to manage the behaviour of your server.
+
+
 API
 =======================
 
-**Properties**
-clients this is a a list of dictionaries of type { 'id': client_id, 'handler': client_handler }
+The API is simply methods and properties of an WebSocketsServer instance.
 
-**Methods**
-set_fn_new_client(fn) sets a callback function to be called whenever a new client connects
-set_fn_client_left(fn) sets a callback function to be called whenever a client disconnects
-send_message(client_id, message)
-send_message_to_all(message)
+**WebSocketsServer Properties**
+| Property | Description          |
+|----------|----------------------|
+| clients  | A list of `client`   |
 
-**(Callbacks)**
-All callbacks are called with the parameters`client_id, server`. Id is the id of the client and server is the instance of the running server. The reason you might want server is in case you want to use a method of the server from outside the server.
-
-
-Structures:
+**Structures**
+````
 client = {
 	'id'      : client_id,
-	'handler' : client_handler_object
-	'address' : (host, port)
+	'handler' : client_handler,
+	'address' : (addr, port)
 }
+````
+
+**Methods**
+| Method               | Description                                                                         | Takes           | Gives |
+|----------------------|-------------------------------------------------------------------------------------|-----------------|-------|
+| set_fn_new_client()  | Sets a callback function that will be called for every new client connecting to us  | function        | None  |
+| set_fn_client_left() | Sets a callback function that will be called for every client disconnecting from us | function        | None  |
+| send_message()       | Sends a message to a specific client. The message is a simple string.               | client, message | None  |
+|                      | Sends a message to all connected clients. The message is a simple string.           | message         | None  |
