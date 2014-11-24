@@ -10,7 +10,7 @@ A minimal Websockets Server in Python with no external dependencies.
   
 Notice that this Websocket Server doesn't support the more advanced features
 like SSL etc. The main usage for this server is to include it in your program
-as means of providing GUI.
+to be able and talk with the browser.
 
 
 Usage
