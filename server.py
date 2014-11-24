@@ -4,7 +4,6 @@ from websocket import WebSocketsServer
 # Called for every client connecting (after handshake)
 def new_client(client, server):
 	print("New client connected and was given id %d" % client['id'])
-	print(client['address'])
 	server.send_message_to_all("Hey all, a new client has joined us")
 
 
@@ -15,8 +14,8 @@ def client_left(client, server):
 
 # Called when a client sends a message
 def message_received(client, message):
-	#print("Message from", client, message)
 	print("Client(%d) said: %s" % (client['id'], message))
+	server.send_message(client, "echo")
 
 
 PORT=13254

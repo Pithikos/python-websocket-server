@@ -1,9 +1,12 @@
+import re, sys
 import struct
 from base64 import b64encode
 from hashlib import sha1
-from mimetools import Message
-from StringIO import StringIO
-from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
+
+if sys.version_info[0] < 3 :
+	from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
+else:
+	from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
 
 
 
@@ -20,14 +23,14 @@ class API():
 			print("ERROR: WebSocketsServer: "+str(e))
 			exit(1)
 
-	def new_client(self):
-		pass
+	def new_client(self, client, server):
+		print("New client connected and was given id %d" % client['id'])
 
-	def client_left(self):
-		pass
+	def client_left(self, client, server):
+		print("Client(%d) disconnected" % client['id'])
 
-	def message_received(self):
-		pass
+	def message_received(self, client, message):
+		print("Client(%d) said: %s" % (client['id'], message))
 
 	def set_fn_new_client(self, fn):
 		self.new_client=fn
@@ -38,12 +41,12 @@ class API():
 	def set_fn_message_received(self, fn):
 		self.message_received=fn
 
-	def send_message(self, client_id, msg):
-		self._unicast_(client_id, msg)
+	def send_message(self, client, msg):
+		self._unicast_(client, msg)
 
 	def send_message_to_all(self, msg):
 		self._multicast_(msg)
-	
+
 
 
 class WebSocketsServer(ThreadingMixIn, TCPServer, API):
@@ -78,19 +81,16 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 		self.new_client(client, self)
 		
 	def _client_left_(self, handler):
-		# REMOVE CLIENT HERE
 		client=self.handler_to_client(handler)
 		self.client_left(client, self)
 		self.clients.remove(client)
 		
-	def _unicast_(self, client_id, msg):
-		for client in self.clients:
-			if client_id == client['id']:
-				client['handler'].send_message(msg)
+	def _unicast_(self, to_client, msg):
+		to_client['handler'].send_message(msg)
 
 	def _multicast_(self, msg):
 		for client in self.clients:
-			self._unicast_(client['id'], msg)
+			self._unicast_(client, msg)
 		
 	def handler_to_client(self, handler):
 		for client in self.clients:
@@ -98,12 +98,7 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 				return client
 
 
-
 class WebSocketHandler(StreamRequestHandler):
-
-	magic  = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
-	server = None
-	keep_alive = True
 
 	def __init__(self, socket, addr, server):
 		self.server=server
@@ -111,58 +106,116 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def setup(self):
 		StreamRequestHandler.setup(self)
+		self.keep_alive = True
 		self.handshake_done = False
+		self.valid_client = False
 
 	def handle(self):
 		while self.keep_alive:
 			if not self.handshake_done:
 				self.handshake()
-			else:
+			elif self.valid_client:
 				self.read_next_message()
 
 	def read_next_message(self):
-		if ord(self.rfile.read(1)) == 136:
-			self.keep_alive = False
+		b1 = self.rfile.read(1)
+		b2 = self.rfile.read(1)
+		FIN    = ord(b1) & 0b10000000
+		OPCODE = ord(b1) & 0b00001111
+		MASKED = ord(b2) & 0b10000000
+		LENGTH = ord(b2) & 0b01111111
+
+		if OPCODE == 8:
+			print("Client asked to close connection.")
+			self.keep_alive = 0
 			return
-		length = ord(self.rfile.read(1)) & 127
-		if length == 126:
-			lengih = struct.unpack(">H", self.rfile.read(2))[0]
-		elif length == 127:
+		if not MASKED:
+			print("Client must always be masked.")
+			self.keep_alive = 0
+			return
+
+		length = LENGTH
+		if LENGTH == 126:
+			length = struct.unpack(">H", self.rfile.read(2))[0]
+		elif LENGTH == 127:
 			length = struct.unpack(">Q", self.rfile.read(8))[0]
-		masks = [ord(byte) for byte in self.rfile.read(4)]
+
+		# python3 gives ordinal of byte directly
+		if sys.version_info[0] < 3:
+			masks = [ord(b) for b in self.rfile.read(4)]
+		else:
+			masks = [b for b in self.rfile.read(4)]
+
 		decoded = ""
 		for char in self.rfile.read(length):
-			char=ord(char) ^ masks[len(decoded) % 4]
+			if isinstance(char, str): # python2 fix
+				char = ord(char)
+			char ^= masks[len(decoded) % 4]
 			decoded += chr(char)
 		self.server._message_received_(self, decoded)
 
 	def send_message(self, message):
-		self.request.send(chr(129))
+		self.send_text(message)
+		
+	def send_text(self, message):
+		# 125 = '0x7d'
+		# 126 = '0x7e'
+		# 127 = '0x7f'
+		# 129 = '0x81'
+		self.request.send(b'\x81') # 0b10000001
 		length = len(message)
 		if length <= 125:
-			self.request.send(chr(length))
+			self.request.send(chr(length).encode())
 		elif length >= 126 and length <= 65535:
-			self.request.send(126)
+			self.request.send(b'0x7d')
 			self.request.send(struct.pack(">H", length))
 		else:
-			self.request.send(127)
+			self.request.send(b'0x7f')
 			self.request.send(struct.pack(">Q", length))
-		self.request.send(message)
+		self.request.send(message.encode())
+		
+	def send_binary(self, message):
+		self.request.send(bytes(0b10000010))
+		pass
 
 	def handshake(self):
-		data = self.request.recv(1024).strip()
-		headers = Message(StringIO(data.split('\r\n', 1)[1]))
-		if headers.get("Upgrade", None) != "websocket":
+		message = self.request.recv(1024).decode().strip()
+		upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
+		if not upgrade:
+			self.keep_alive = False
 			return
-		key = headers['Sec-WebSocket-Key']
-		digest = b64encode(sha1(key + self.magic).hexdigest().decode('hex'))
-		response = \
-		  'HTTP/1.1 101 Switching Protocols\r\n'\
-		  'Upgrade: websocket\r\n'\
-		  'Connection: Upgrade\r\n'\
-		  'Sec-WebSocket-Accept: %s\r\n\r\n' % digest
-		self.handshake_done = self.request.send(response)
+		key = re.search('\n[sS]ec-[wW]eb[sS]ocket-[kK]ey[\s]*:[\s]*(.*)\r\n', message)
+		if key:
+			key = key.group(1)
+		else:
+			print("Client tried to connect but was missing a key")
+			self.keep_alive = False
+			return
+		response = self.make_handshake_response(key)
+		self.handshake_done = self.request.send(response.encode())
+		self.valid_client = True
 		self.server._new_client_(self)
 		
+	def make_handshake_response(self, key):
+		response = \
+		  'HTTP/1.1 101 Switching Protocols\r\n'\
+		  'Upgrade: websocket\r\n'              \
+		  'Connection: Upgrade\r\n'             \
+		  'Sec-WebSocket-Accept: %s\r\n'        \
+		  '\r\n' % self.calculate_response_key(key)
+		return response
+		
+	def calculate_response_key(self, key):
+		GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+		hash = sha1(key.encode() + GUID.encode())
+		response_key = b64encode(hash.digest()).strip()
+		return response_key.decode('ASCII')
+
 	def finish(self):
 		self.server._client_left_(self)
+
+
+# This is only for testing purposes
+class DummyWebsocketHandler(WebSocketHandler):
+    def __init__(self, *_):
+        pass
