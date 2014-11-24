@@ -29,7 +29,7 @@ class API():
 	def client_left(self, client, server):
 		print("Client(%d) disconnected" % client['id'])
 
-	def message_received(self, client, message):
+	def message_received(self, client, server, message):
 		print("Client(%d) said: %s" % (client['id'], message))
 
 	def set_fn_new_client(self, fn):
@@ -68,7 +68,7 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 		TCPServer.__init__(self, (host, port), WebSocketHandler)
 
 	def _message_received_(self, handler, msg):
-		self.message_received(self.handler_to_client(handler), msg)
+		self.message_received(self.handler_to_client(handler), self, msg)
 
 	def _new_client_(self, handler):
 		self.id_counter += 1

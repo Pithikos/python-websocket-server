@@ -13,9 +13,8 @@ def client_left(client, server):
 
 
 # Called when a client sends a message
-def message_received(client, message):
+def message_received(client, server, message):
 	print("Client(%d) said: %s" % (client['id'], message))
-	server.send_message(client, "echo")
 
 
 PORT=13254
