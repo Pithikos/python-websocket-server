@@ -19,8 +19,7 @@ You can get a feel of how to use the websocket server by running
 
     python server.py
     
-Then you need to connect from a client. Use the `client.html` file to connect
-by using your browser's websocket implementation.
+Then just open `client.html` in your browser and you should be able to send and receive messages.
 
 
 Using on your project
