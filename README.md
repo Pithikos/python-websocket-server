@@ -35,23 +35,16 @@ API
 
 The API is simply methods and properties of a WebSocketsServer instance.
 
-**Properties**
+##Server
+
+###Properties
 
 | Property | Description          |
 |----------|----------------------|
 | clients  | A list of `client`   |
 
 
-**Structures**
-````
-client = {
-	'id'      : client_id,
-	'handler' : client_handler,
-	'address' : (addr, port)
-}
-````
-
-**Methods**
+###Methods
 
 | Method                    | Description                                                                         | Takes           | Gives |
 |---------------------------|-------------------------------------------------------------------------------------|-----------------|-------|
@@ -62,7 +55,7 @@ client = {
 | send_message_to_all()     | Sends a message to all connected clients. The message is a simple string.           | message         | None  |
 
 
-**Callback functions**
+###Callback functions
 
 | Set by                    | Description                                   | Parameters              |
 |---------------------------|-----------------------------------------------|-------------------------|
@@ -71,7 +64,8 @@ client = {
 | set_fn_message_received() | Called when a client sends a message          | client, server, message |
 
 
-The client gives access to the structure client. The server is merely passed to be able and send messages to clients.
+The client passed to the callback is the client that left, sent the message, etc. The server might not have any use to use. However it is
+passed in case you want to send messages to clients.
 
 
 Example:
@@ -85,3 +79,16 @@ server = WebSocketsServer(13254)
 server.set_fn_new_client(new_client)
 server.run_forever()
 ````
+
+##Client
+
+Client is just a dictionary.
+
+````
+{
+	'id'      : client_id,
+	'handler' : client_handler,
+	'address' : (addr, port)
+}
+````
+
