@@ -37,7 +37,7 @@ API
 
 The API is simply methods and properties of a `WebSocketsServer` instance.
 
-##Server
+## WebSocketsServer
 
 ###Properties
 
@@ -84,7 +84,7 @@ server.run_forever()
 
 ##Client
 
-Client is just a dictionary.
+Client is just a dictionary passed along methods.
 
 ````
 {
