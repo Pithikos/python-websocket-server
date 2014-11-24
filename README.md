@@ -52,6 +52,7 @@ client = {
 ````
 
 **Methods**
+
 | Method                    | Description                                                                         | Takes           | Gives |
 |---------------------------|-------------------------------------------------------------------------------------|-----------------|-------|
 | set_fn_new_client()       | Sets a callback function that will be called for every new client connecting to us  | function        | None  |
@@ -62,13 +63,16 @@ client = {
 
 
 **Callback functions**
+
 | Set by                    | Description                                   | Parameters              |
 |---------------------------|-----------------------------------------------|-------------------------|
 | set_fn_new_client()       | Called for every new client connecting to us  | client, server          |
 | set_fn_client_left()      | Called for every client disconnecting from us | client, server          |
 | set_fn_message_received() | Called when a client sends a message          | client, server, message |
 
+
 The client gives access to the structure client. The server is merely passed to be able and send messages to clients.
+
 
 Example:
 ````
