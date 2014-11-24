@@ -1,8 +1,16 @@
 Websockets Server
 =======================
 
-A simple WebsocketsServer in Python which doesn't need any dependencies.
+A minimal Websockets Server in Python with no external dependencies.
 
+  * Works with Python2 and Python3
+  * Clean simple API
+  * Multiple clients
+  * No dependencies
+  
+Notice that this Websocket Server doesn't support the more advanced features
+like SSL etc. The main usage for this server is to include it in your program
+as means of providing GUI.
 
 
 Usage
@@ -51,4 +59,3 @@ client = {
 | set_fn_client_left()  | Sets a callback function that will be called for every client disconnecting from us | function        | None  |
 | send_message()        | Sends a message to a specific client. The message is a simple string.               | client, message | None  |
 | send_message_to_all() | Sends a message to all connected clients. The message is a simple string.           | message         | None  |
-
