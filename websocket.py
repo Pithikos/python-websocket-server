@@ -161,8 +161,8 @@ class WebSocketHandler(StreamRequestHandler):
 		# 125 = '0x7d'
 		# 126 = '0x7e'
 		# 127 = '0x7f'
-		# 129 = '0x81'
-		self.request.send(b'\x81') # 0b10000001
+		# 129 = '0x81' = 0b10000001
+		self.request.send(b'\x81')
 		length = len(message)
 		if length <= 125:
 			self.request.send(chr(length).encode())
