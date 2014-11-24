@@ -24,12 +24,15 @@ class API():
 			exit(1)
 
 	def new_client(self, client, server):
+		pass
 		print("New client connected and was given id %d" % client['id'])
 
 	def client_left(self, client, server):
+		pass
 		print("Client(%d) disconnected" % client['id'])
 
 	def message_received(self, client, server, message):
+		pass
 		print("Client(%d) said: %s" % (client['id'], message))
 
 	def set_fn_new_client(self, fn):
