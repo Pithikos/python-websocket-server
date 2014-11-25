@@ -10,7 +10,7 @@ A minimal Websockets Server in Python with no external dependencies.
   
 Notice that this Websocket Server doesn't support the more advanced features
 like SSL etc. The main usage for this server is to include it in your program
-as means of providing GUI.
+to be able and talk with the browser.
 
 
 Usage
@@ -19,8 +19,7 @@ You can get a feel of how to use the websocket server by running
 
     python server.py
     
-Then you need to connect from a client. Use the `client.html` file to connect
-by using your browser's websocket implementation.
+Then just open `client.html` in your browser and you should be able to send and receive messages.
 
 
 Using on your project
