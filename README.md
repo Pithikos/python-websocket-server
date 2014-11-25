@@ -39,6 +39,10 @@ The API is simply methods and properties of a `WebSocketsServer` instance.
 
 ## WebSocketsServer
 
+The WebSocketsServer takes two arguments: a `port` and a `hostname`.
+By default `localhost` is used. However if you want to be able and connect
+to the server from the network you need to pass `0.0.0.0` as hostname.
+
 ###Properties
 
 | Property | Description          |
