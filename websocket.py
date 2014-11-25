@@ -161,21 +161,67 @@ class WebSocketHandler(StreamRequestHandler):
 		self.send_text(message)
 		
 	def send_text(self, message):
-		# 125 = '0x7d'
-		# 126 = '0x7e'
-		# 127 = '0x7f'
+		'''
+		+-+-+-+-+-------+-+-------------+-------------------------------+
+		 0                   1                   2                   3
+		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		+-+-+-+-+-------+-+-------------+-------------------------------+
+		|F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+		|I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+		|N|V|V|V|       |S|             |   (if payload len==126/127)   |
+		| |1|2|3|       |K|             |                               |
+		+-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+		|     Extended payload length continued, if payload len == 127  |
+		+ - - - - - - - - - - - - - - - +-------------------------------+
+		|                               | Masking-key, if MASK set to 1 |
+		+-------------------------------+-------------------------------+
+		| Masking-key (continued)       |          Payload Data         |
+		+-------------------------------- - - - - - - - - - - - - - - - +
+		:                     Payload Data continued ...                :
+		+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+		|                     Payload Data continued ...                |
+		+---------------------------------------------------------------+
+		'''
+		#   0 = '0x00' = 0b00000000
+		# 125 = '0x7d' = 0b01111101
+		# 126 = '0x7e' = 0b01111110
+		# 127 = '0x7f' = 0b01111111
+		# 128 = '0x80' = 0b10000000
 		# 129 = '0x81' = 0b10000001
-		self.request.send(b'\x81')
 		length = len(message)
+		
+		# fits in one frame
 		if length <= 125:
+			self.request.send(b'\x81')
 			self.request.send(chr(length).encode())
+			self.request.send(message.encode())
+			
+		# fits in one frame but needs extended payload length
 		elif length >= 126 and length <= 65535:
-			self.request.send(b'0x7d')
-			self.request.send(struct.pack(">H", length))
-		else:
-			self.request.send(b'0x7f')
+			self.request.send(b'\x81\x7f') # extended payload
 			self.request.send(struct.pack(">Q", length))
-		self.request.send(message.encode())
+			self.request.send(message.encode())
+		
+		# needs chunking
+		else:
+			chunk_size=65535
+			for pos in range(0, length, chunk_size):
+				chunk = message[pos:pos+chunk_size]
+				if pos == 0:
+					#print("sending first frame")
+					self.request.send(b'\x01')
+				elif length - pos != length % chunk_size:
+					#print("sending middle frame")
+					self.request.send(b'\x00')
+				else:
+					#print("sending last frame")
+					self.request.send(b'\x80')
+				if length <= 125:
+					self.request.send(chr(len(chunk)).encode())
+				else:
+					self.request.send(b'\x7f')
+					self.request.send(struct.pack(">Q", len(chunk)))
+				self.request.send(chunk.encode())
 		
 	def send_binary(self, message):
 		self.request.send(bytes(0b10000010))
