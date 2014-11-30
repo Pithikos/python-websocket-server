@@ -2,14 +2,16 @@ import _bootstrap_
 from websocket import WebSocketsServer
 from time import sleep
 '''
-This creates just a server that sends 4 messages on a newly
-connected client: 
+This creates just a server that will send a different message to every new connection: 
     
     1. A message of length less than 126
     2. A message of length 126
     3. A message of length 127
     4. A message of length bigger than 127
-    5. A huge message
+    5. A message above 1024
+    6. A message above 65K
+    7. An enormous message (well beyond 65K)
+    
     
 Reconnect to get the next message
 '''
