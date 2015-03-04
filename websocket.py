@@ -182,6 +182,7 @@ class WebSocketHandler(StreamRequestHandler):
 		|                     Payload Data continued ...                |
 		+---------------------------------------------------------------+
 		'''
+		
 		#   0 = '0x00' = 0b00000000
 		# 125 = '0x7d' = 0b01111101
 		# 126 = '0x7e' = 0b01111110
@@ -195,11 +196,13 @@ class WebSocketHandler(StreamRequestHandler):
 			self.request.send(b'\x81')
 			self.request.send(chr(length).encode())
 			self.request.send(message.encode())
+			print("sending single frame")
 			
 		# fits in one frame but needs extended payload length
 		elif length >= 126 and length <= 65535:
-			self.request.send(b'\x81\x7f') # extended payload
-			self.request.send(struct.pack(">Q", length))
+			print("sending extended")
+			self.request.send(b'\x81\x7e')
+			self.request.send(struct.pack(">H", length)) # MUST be 16bits
 			self.request.send(message.encode())
 		
 		# needs chunking
@@ -208,13 +211,13 @@ class WebSocketHandler(StreamRequestHandler):
 			for pos in range(0, length, chunk_size):
 				chunk = message[pos:pos+chunk_size]
 				if pos == 0:
-					#print("sending first frame")
+					print("sending first frame")
 					self.request.send(b'\x01')
 				elif length - pos != length % chunk_size:
-					#print("sending middle frame")
+					print("sending middle frame")
 					self.request.send(b'\x00')
 				else:
-					#print("sending last frame")
+					print("sending last frame")
 					self.request.send(b'\x80')
 				if length <= 125:
 					self.request.send(chr(len(chunk)).encode())
