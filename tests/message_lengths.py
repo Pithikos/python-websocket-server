@@ -26,32 +26,32 @@ def new_client(client, server):
 	print("New client connected and was given id %d" % client['id'])
 	global counter
 	if counter == 0:
-		print("Sending message 1 of length %d" % len(msg_125b))
+		print("Sending message 1 of length %d" % len(msg_125B))
 		server.send_message(client, msg_125b)
 	elif counter == 1:
-		print("Sending message 2 of length %d" % len(msg_126b))
+		print("Sending message 2 of length %d" % len(msg_126B))
 		server.send_message(client, msg_126b)
 	elif counter == 2:
-		print("Sending message 3 of length %d" % len(msg_127b))
+		print("Sending message 3 of length %d" % len(msg_127B))
 		server.send_message(client, msg_127b)
 	elif counter == 3:
-		print("Sending message 4 of length %d" % len(msg_208b))
+		print("Sending message 4 of length %d" % len(msg_208B))
 		server.send_message(client, msg_208b)
 	elif counter == 4:
-		print("Sending message 5 of length %d" % len(msg_1251b))
+		print("Sending message 5 of length %d" % len(msg_1251B))
 		server.send_message(client, msg_1251b)
 	elif counter == 5:
-		print("Sending message 6 of length %d" % len(msg_68Kb))
+		print("Sending message 6 of length %d" % len(msg_68KB))
 		server.send_message(client, msg_68Kb)
 	elif counter == 6:
-		print("Sending message 7 of length %d" % len(msg_1500Kb))
-		server.send_message(client, msg_1500Kb)
+		print("Sending message 7 of length %d" % len(msg_1500KB))
+		server.send_message(client, msg_1500KB)
 	else:
 		print("No errors")
 	counter += 1
 
 
-PORT=13254
+PORT=9001
 server = WebSocketsServer(PORT)
 server.set_fn_new_client(new_client)
 server.run_forever()
