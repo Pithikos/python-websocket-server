@@ -197,21 +197,21 @@ class WebSocketHandler(StreamRequestHandler):
 
 		# normal payload
 		if length <= 125:
-			print("sending single frame of size %s", length)
+			#print("sending single frame of size %s", length)
 			self.request.send(b'\x81')
 			self.request.send(chr(length).encode())
 			self.request.send(message.encode())
 			
 		# extended payload
 		elif length >= 126 and length <= 65535:
-			print("sending extended frame of size %s", length)
+			#print("sending extended frame of size %s", length)
 			self.request.send(b'\x81\x7e')
 			self.request.send(struct.pack(">H", length)) # MUST be 16bits
 			self.request.send(message.encode())
 
 		# huge extended payload
 		elif length <= 18446744073709551616L:
-			print("sending extended frame of size %s", length)
+			#print("sending extended frame of size %s", length)
 			self.request.send(b'\x81\x7f')
 			self.request.send(struct.pack(">Q", length)) # MUST be 64bits
 			self.request.send(message.encode())
