@@ -159,7 +159,7 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def send_message(self, message):
 		self.send_text(message)
-		
+
 	def send_text(self, message):
 		'''
 		+-+-+-+-+-------+-+-------------+-------------------------------+
@@ -181,6 +181,10 @@ class WebSocketHandler(StreamRequestHandler):
 		+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
 		|                     Payload Data continued ...                |
 		+---------------------------------------------------------------+
+		
+		NOTES
+		Fragmented(=continuation) messages are not being used since their usage
+		is needed in very limited cases - when we don't know the payload length.
 		'''
 		
 		#   0 = '0x00' = 0b00000000
@@ -190,41 +194,27 @@ class WebSocketHandler(StreamRequestHandler):
 		# 128 = '0x80' = 0b10000000
 		# 129 = '0x81' = 0b10000001
 		length = len(message)
-		
-		# fits in one frame
+
+		# normal payload
 		if length <= 125:
+			print("sending single frame of size %s", length)
 			self.request.send(b'\x81')
 			self.request.send(chr(length).encode())
 			self.request.send(message.encode())
-			print("sending single frame")
 			
-		# fits in one frame but needs extended payload length
+		# extended payload
 		elif length >= 126 and length <= 65535:
-			print("sending extended")
+			print("sending extended frame of size %s", length)
 			self.request.send(b'\x81\x7e')
 			self.request.send(struct.pack(">H", length)) # MUST be 16bits
 			self.request.send(message.encode())
-		
-		# needs chunking
-		else:
-			chunk_size=65535
-			for pos in range(0, length, chunk_size):
-				chunk = message[pos:pos+chunk_size]
-				if pos == 0:
-					print("sending first frame")
-					self.request.send(b'\x01')
-				elif length - pos != length % chunk_size:
-					print("sending middle frame")
-					self.request.send(b'\x00')
-				else:
-					print("sending last frame")
-					self.request.send(b'\x80')
-				if length <= 125:
-					self.request.send(chr(len(chunk)).encode())
-				else:
-					self.request.send(b'\x7f')
-					self.request.send(struct.pack(">Q", len(chunk)))
-				self.request.send(chunk.encode())
+
+		# huge extended payload
+		elif length <= 18446744073709551616L:
+			print("sending extended frame of size %s", length)
+			self.request.send(b'\x81\x7f')
+			self.request.send(struct.pack(">Q", length)) # MUST be 64bits
+			self.request.send(message.encode())
 
 	def handshake(self):
 		message = self.request.recv(1024).decode().strip()
