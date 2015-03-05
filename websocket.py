@@ -86,7 +86,8 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 	def _client_left_(self, handler):
 		client=self.handler_to_client(handler)
 		self.client_left(client, self)
-		self.clients.remove(client)
+		if client in self.clients:
+			self.clients.remove(client)
 		
 	def _unicast_(self, to_client, msg):
 		to_client['handler'].send_message(msg)
