@@ -128,7 +128,11 @@ class WebSocketHandler(StreamRequestHandler):
 		OPCODE = ord(b1) & 0b00001111
 		MASKED = ord(b2) & 0b10000000
 		LENGTH = ord(b2) & 0b01111111
-
+		
+		if not b1:
+			print("Client closed connection.")
+			self.keep_alive = 0
+			return
 		if OPCODE == 8:
 			print("Client asked to close connection.")
 			self.keep_alive = 0
