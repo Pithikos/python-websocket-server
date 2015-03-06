@@ -215,7 +215,7 @@ class WebSocketHandler(StreamRequestHandler):
 			self.request.send(message.encode())
 
 		# huge extended payload
-		elif length <= 18446744073709551616L:
+		elif length < 18446744073709551616:
 			#print("sending extended frame of size %s", length)
 			self.request.send(b'\x81\x7f')
 			self.request.send(struct.pack(">Q", length)) # MUST be 64bits
