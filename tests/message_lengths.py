@@ -27,22 +27,22 @@ def new_client(client, server):
 	global counter
 	if counter == 0:
 		print("Sending message 1 of length %d" % len(msg_125B))
-		server.send_message(client, msg_125b)
+		server.send_message(client, msg_125B)
 	elif counter == 1:
 		print("Sending message 2 of length %d" % len(msg_126B))
-		server.send_message(client, msg_126b)
+		server.send_message(client, msg_126B)
 	elif counter == 2:
 		print("Sending message 3 of length %d" % len(msg_127B))
-		server.send_message(client, msg_127b)
+		server.send_message(client, msg_127B)
 	elif counter == 3:
 		print("Sending message 4 of length %d" % len(msg_208B))
-		server.send_message(client, msg_208b)
+		server.send_message(client, msg_208B)
 	elif counter == 4:
 		print("Sending message 5 of length %d" % len(msg_1251B))
-		server.send_message(client, msg_1251b)
+		server.send_message(client, msg_1251B)
 	elif counter == 5:
 		print("Sending message 6 of length %d" % len(msg_68KB))
-		server.send_message(client, msg_68Kb)
+		server.send_message(client, msg_68KB)
 	elif counter == 6:
 		print("Sending message 7 of length %d" % len(msg_1500KB))
 		server.send_message(client, msg_1500KB)
