@@ -205,21 +205,21 @@ class WebSocketHandler(StreamRequestHandler):
 			#print("sending single frame of size %s", length)
 			self.request.send(b'\x81')
 			self.request.send(chr(length).encode())
-			self.request.send(message.encode())
+			self.request.send(unicode(message, 'UTF-8'))
 			
 		# extended payload
 		elif length >= 126 and length <= 65535:
 			#print("sending extended frame of size %s", length)
 			self.request.send(b'\x81\x7e')
 			self.request.send(struct.pack(">H", length)) # MUST be 16bits
-			self.request.send(message.encode())
+			self.request.send(unicode(message, 'UTF-8'))
 
 		# huge extended payload
 		elif length < 18446744073709551616:
 			#print("sending extended frame of size %s", length)
 			self.request.send(b'\x81\x7f')
 			self.request.send(struct.pack(">Q", length)) # MUST be 64bits
-			self.request.send(message.encode())
+			self.request.send(unicode(message, 'UTF-8'))
 
 	def handshake(self):
 		message = self.request.recv(1024).decode().strip()
