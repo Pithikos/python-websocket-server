@@ -1,7 +1,7 @@
 import _bootstrap_
 from websocket import WebSocketsServer
 from time import sleep
-from messages import *
+from testsuite.messages import *
 
 '''
 This creates just a server that will send a different message to every new connection: 
