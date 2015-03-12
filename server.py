@@ -14,10 +14,13 @@ def client_left(client, server):
 
 # Called when a client sends a message
 def message_received(client, server, message):
+	if len(message) > 200:
+		message = message[:200]+'..'
 	print("Client(%d) said: %s" % (client['id'], message))
 
 
 PORT=13254
+PORT=9001
 server = WebSocketsServer(PORT)
 server.set_fn_new_client(new_client)
 server.set_fn_client_left(client_left)
