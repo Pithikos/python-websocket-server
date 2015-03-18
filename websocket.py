@@ -207,10 +207,10 @@ class WebSocketHandler(StreamRequestHandler):
 		if isinstance(message, bytes):
 			message = try_decode_UTF8(message) # this is slower but assures we have UTF-8
 			if not message:
-				print("Can\'t send message, message is not valid UTF-8")
+				raise Exception("Can\'t send message, message is not valid UTF-8")
 				return False
-		else:
-			print('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
+		elif not (isinstance(message, str) or isinstance(message, unicode)):
+			raise Exception('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
 			return False
 		encoded_message = encode_to_UTF8(message)
 		length = len(encoded_message)
