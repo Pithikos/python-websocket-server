@@ -206,7 +206,7 @@ class WebSocketHandler(StreamRequestHandler):
 			if not message:
 				print("Can\'t send message, message is not valid UTF-8")
 				return False
-		elif isinstance(message, str):
+		elif isinstance(message, str) or isinstance(message, unicode):
 			pass
 		else:
 			print('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
