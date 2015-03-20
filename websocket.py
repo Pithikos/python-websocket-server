@@ -146,15 +146,22 @@ class WebSocketHandler(StreamRequestHandler):
 			elif self.valid_client:
 				self.read_next_message()
 
+	def read_bytes(self, num):
+		# python3 gives ordinal of byte directly
+		bytes = self.rfile.read(num)
+		if sys.version_info[0] < 3:
+			return map(ord, bytes)
+		else:
+			return bytes
 
 	def read_next_message(self):
 
-		b1, b2 = self.rfile.read(2)
+		b1, b2 = self.read_bytes(2)
 
-		fin    = ord(b1) & FIN
-		opcode = ord(b1) & OPCODE
-		masked = ord(b2) & MASKED
-		payload_length = ord(b2) & PAYLOAD_LEN
+		fin    = b1 & FIN
+		opcode = b1 & OPCODE
+		masked = b2 & MASKED
+		payload_length = b2 & PAYLOAD_LEN
 
 		if not b1:
 			print("Client closed connection.")
@@ -174,24 +181,15 @@ class WebSocketHandler(StreamRequestHandler):
 		elif payload_length == 127:
 			payload_length = struct.unpack(">Q", self.rfile.read(8))[0]
 
-		# python3 gives ordinal of byte directly
-		if sys.version_info[0] < 3:
-			masks = [ord(b) for b in self.rfile.read(4)]
-		else:
-			masks = [b for b in self.rfile.read(4)]
-
+		masks = self.read_bytes(4)
 		decoded = ""
-		for char in self.rfile.read(payload_length):
-			if isinstance(char, str): # python2 fix
-				char = ord(char)
+		for char in self.read_bytes(payload_length):
 			char ^= masks[len(decoded) % 4]
 			decoded += chr(char)
 		self.server._message_received_(self, decoded)
 
-
 	def send_message(self, message):
 		self.send_text(message)
-
 
 	def send_text(self, message):
 		'''
@@ -239,7 +237,6 @@ class WebSocketHandler(StreamRequestHandler):
 
 		self.request.send(header + payload)
 
-
 	def handshake(self):
 		message = self.request.recv(1024).decode().strip()
 		upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
@@ -257,8 +254,7 @@ class WebSocketHandler(StreamRequestHandler):
 		self.handshake_done = self.request.send(response.encode())
 		self.valid_client = True
 		self.server._new_client_(self)
-
-
+		
 	def make_handshake_response(self, key):
 		return \
 		  'HTTP/1.1 101 Switching Protocols\r\n'\
@@ -266,14 +262,12 @@ class WebSocketHandler(StreamRequestHandler):
 		  'Connection: Upgrade\r\n'             \
 		  'Sec-WebSocket-Accept: %s\r\n'        \
 		  '\r\n' % self.calculate_response_key(key)
-
-
+		
 	def calculate_response_key(self, key):
 		GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 		hash = sha1(key.encode() + GUID.encode())
 		response_key = b64encode(hash.digest()).strip()
 		return response_key.decode('ASCII')
-
 
 	def finish(self):
 		self.server._client_left_(self)
