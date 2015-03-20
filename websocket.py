@@ -6,13 +6,43 @@ import struct
 from base64 import b64encode
 from hashlib import sha1
 
-
 if sys.version_info[0] < 3 :
 	from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
 else:
 	from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
 
 
+
+# ---------------------- Websocket bits in bytes -----------------------
+'''
+	+-+-+-+-+-------+-+-------------+-------------------------------+
+	 0                   1                   2                   3
+	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	+-+-+-+-+-------+-+-------------+-------------------------------+
+	|F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+	|I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+	|N|V|V|V|       |S|             |   (if payload len==126/127)   |
+	| |1|2|3|       |K|             |                               |
+	+-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+	|     Extended payload length continued, if payload len == 127  |
+	+ - - - - - - - - - - - - - - - +-------------------------------+
+	|                     Payload Data continued ...                |
+	+---------------------------------------------------------------+
+'''
+
+FIN    = 0x80
+OPCODE = 0x0f
+MASKED = 0x80
+PAYLOAD_LEN = 0x7f
+PAYLOAD_LEN_EXT16 = 0x7e
+PAYLOAD_LEN_EXT64 = 0x7f
+
+OPCODE_TEXT = 0x01
+CLOSE_CONN  = 0x8
+
+
+
+# -------------------------------- API ---------------------------------
 
 class API():
 	def run_forever(self):
@@ -44,12 +74,14 @@ class API():
 
 
 
+# ------------------------- Implementation -----------------------------
+
 class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 
 	allow_reuse_address = True
 	daemon_threads = True # comment to keep threads alive until finished
 
-	# clients is list of:
+	# clients is list of dict:
 	#    {
 	#     'id'      : id,
 	#     'handler' : handler,
@@ -116,32 +148,31 @@ class WebSocketHandler(StreamRequestHandler):
 
 
 	def read_next_message(self):
-		
-		b1 = self.rfile.read(1)
-		b2 = self.rfile.read(1)
-		FIN    = ord(b1) & 0b10000000
-		OPCODE = ord(b1) & 0b00001111
-		MASKED = ord(b2) & 0b10000000
-		LENGTH = ord(b2) & 0b01111111
+
+		b1, b2 = self.rfile.read(2)
+
+		fin    = ord(b1) & FIN
+		opcode = ord(b1) & OPCODE
+		masked = ord(b2) & MASKED
+		payload_length = ord(b2) & PAYLOAD_LEN
 
 		if not b1:
 			print("Client closed connection.")
 			self.keep_alive = 0
 			return
-		if OPCODE == 8:
+		if opcode == CLOSE_CONN:
 			print("Client asked to close connection.")
 			self.keep_alive = 0
 			return
-		if not MASKED:
+		if not masked:
 			print("Client must always be masked.")
 			self.keep_alive = 0
 			return
 
-		length = LENGTH
-		if LENGTH == 126:
-			length = struct.unpack(">H", self.rfile.read(2))[0]
-		elif LENGTH == 127:
-			length = struct.unpack(">Q", self.rfile.read(8))[0]
+		if payload_length == 126:
+			payload_length = struct.unpack(">H", self.rfile.read(2))[0]
+		elif payload_length == 127:
+			payload_length = struct.unpack(">Q", self.rfile.read(8))[0]
 
 		# python3 gives ordinal of byte directly
 		if sys.version_info[0] < 3:
@@ -150,7 +181,7 @@ class WebSocketHandler(StreamRequestHandler):
 			masks = [b for b in self.rfile.read(4)]
 
 		decoded = ""
-		for char in self.rfile.read(length):
+		for char in self.rfile.read(payload_length):
 			if isinstance(char, str): # python2 fix
 				char = ord(char)
 			char ^= masks[len(decoded) % 4]
@@ -164,29 +195,10 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def send_text(self, message):
 		'''
-		+-+-+-+-+-------+-+-------------+-------------------------------+
-		 0                   1                   2                   3
-		 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		+-+-+-+-+-------+-+-------------+-------------------------------+
-		|F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-		|I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
-		|N|V|V|V|       |S|             |   (if payload len==126/127)   |
-		| |1|2|3|       |K|             |                               |
-		+-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-		|     Extended payload length continued, if payload len == 127  |
-		+ - - - - - - - - - - - - - - - +-------------------------------+
-		|                     Payload Data continued ...                |
-		+---------------------------------------------------------------+
-
 		NOTES
 		Fragmented(=continuation) messages are not being used since their usage
 		is needed in very limited cases - when we don't know the payload length.
 		'''
-
-		FIN = 0x80
-		OPCODE_TEXT = 0x01
-		EXT_PAYLOAD_16BITS = 0x7e
-		EXT_PAYLOAD_64BITS = 0x7f
 	
 		# Validate message
 		if isinstance(message, bytes):
@@ -212,13 +224,13 @@ class WebSocketHandler(StreamRequestHandler):
 		# Extended payload
 		elif payload_length >= 126 and payload_length <= 65535:
 			header.append(FIN | OPCODE_TEXT)
-			header.append(EXT_PAYLOAD_16BITS)
+			header.append(PAYLOAD_LEN_EXT16)
 			header.extend(struct.pack(">H", payload_length))
 
 		# Huge extended payload
 		elif payload_length < 18446744073709551616:
 			header.append(FIN | OPCODE_TEXT)
-			header.append(EXT_PAYLOAD_64BITS)
+			header.append(PAYLOAD_LEN_EXT64)
 			header.extend(struct.pack(">Q", payload_length))
 			
 		else:
