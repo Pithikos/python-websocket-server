@@ -15,7 +15,6 @@ else:
 
 
 class API():
-
 	def run_forever(self):
 		try:
 			print("Listening on port %d for clients.." % self.port)
@@ -26,28 +25,20 @@ class API():
 		except Exception as e:
 			print("ERROR: WebSocketsServer: "+str(e))
 			exit(1)
-
 	def new_client(self, client, server):
 		pass
-
 	def client_left(self, client, server):
 		pass
-
 	def message_received(self, client, server, message):
 		pass
-
 	def set_fn_new_client(self, fn):
 		self.new_client=fn
-
 	def set_fn_client_left(self, fn):
 		self.client_left=fn
-
 	def set_fn_message_received(self, fn):
 		self.message_received=fn
-
 	def send_message(self, client, msg):
 		self._unicast_(client, msg)
-
 	def send_message_to_all(self, msg):
 		self._multicast_(msg)
 
@@ -83,13 +74,13 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 		}
 		self.clients.append(client)
 		self.new_client(client, self)
-		
+
 	def _client_left_(self, handler):
 		client=self.handler_to_client(handler)
 		self.client_left(client, self)
 		if client in self.clients:
 			self.clients.remove(client)
-		
+	
 	def _unicast_(self, to_client, msg):
 		to_client['handler'].send_message(msg)
 
@@ -122,6 +113,7 @@ class WebSocketHandler(StreamRequestHandler):
 				self.handshake()
 			elif self.valid_client:
 				self.read_next_message()
+
 
 	def read_next_message(self):
 		
@@ -165,8 +157,10 @@ class WebSocketHandler(StreamRequestHandler):
 			decoded += chr(char)
 		self.server._message_received_(self, decoded)
 
+
 	def send_message(self, message):
 		self.send_text(message)
+
 
 	def send_text(self, message):
 		'''
@@ -181,60 +175,58 @@ class WebSocketHandler(StreamRequestHandler):
 		+-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
 		|     Extended payload length continued, if payload len == 127  |
 		+ - - - - - - - - - - - - - - - +-------------------------------+
-		|                               | Masking-key, if MASK set to 1 |
-		+-------------------------------+-------------------------------+
-		| Masking-key (continued)       |          Payload Data         |
-		+-------------------------------- - - - - - - - - - - - - - - - +
-		:                     Payload Data continued ...                :
-		+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
 		|                     Payload Data continued ...                |
 		+---------------------------------------------------------------+
-		
+
 		NOTES
 		Fragmented(=continuation) messages are not being used since their usage
 		is needed in very limited cases - when we don't know the payload length.
 		'''
 
-		#   0 = '0x00' = 0b00000000
-		# 125 = '0x7d' = 0b01111101
-		# 126 = '0x7e' = 0b01111110
-		# 127 = '0x7f' = 0b01111111
-		# 128 = '0x80' = 0b10000000
-		# 129 = '0x81' = 0b10000001
-
-		# assure message is of acceptable format and encode to UTF-8 if needed
-		encoded_message = None
+		FIN = 0x80
+		OPCODE_TEXT = 0x01
+		EXT_PAYLOAD_16BITS = 0x7e
+		EXT_PAYLOAD_64BITS = 0x7f
+	
+		# Validate message
 		if isinstance(message, bytes):
 			message = try_decode_UTF8(message) # this is slower but assures we have UTF-8
 			if not message:
-				raise Exception("Can\'t send message, message is not valid UTF-8")
+				print("Can\'t send message, message is not valid UTF-8")
 				return False
-		elif not (isinstance(message, str) or isinstance(message, unicode)):
-			raise Exception('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
+		elif isinstance(message, str):
+			pass
+		else:
+			print('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
 			return False
-		encoded_message = encode_to_UTF8(message)
-		length = len(encoded_message)
 
-		# normal payload
-		if length <= 125:
-			#print("sending single frame of size %s", length)
-			self.request.send(b'\x81')
-			self.request.send(chr(length).encode())
-			self.request.send(encoded_message)
+		header  = bytearray()
+		payload = encode_to_UTF8(message)
+		payload_length = len(payload)
+
+		# Normal payload
+		if payload_length <= 125:
+			header.append(FIN | OPCODE_TEXT)
+			header.append(payload_length)
+
+		# Extended payload
+		elif payload_length >= 126 and payload_length <= 65535:
+			header.append(FIN | OPCODE_TEXT)
+			header.append(EXT_PAYLOAD_16BITS)
+			header.extend(struct.pack(">H", payload_length))
+
+		# Huge extended payload
+		elif payload_length < 18446744073709551616:
+			header.append(FIN | OPCODE_TEXT)
+			header.append(EXT_PAYLOAD_64BITS)
+			header.extend(struct.pack(">Q", payload_length))
 			
-		# extended payload
-		elif length >= 126 and length <= 65535:
-			#print("sending extended frame of size %s", length)
-			self.request.send(b'\x81\x7e')
-			self.request.send(struct.pack(">H", length)) # MUST be 16bits
-			self.request.send(encoded_message)
+		else:
+			raise Exception("Message is too big. Consider breaking it into chunks.")
+			return
 
-		# huge extended payload
-		elif length < 18446744073709551616:
-			#print("sending extended frame of size %s", length)
-			self.request.send(b'\x81\x7f')
-			self.request.send(struct.pack(">Q", length)) # MUST be 64bits
-			self.request.send(encoded_message)
+		self.request.send(header + payload)
+
 
 	def handshake(self):
 		message = self.request.recv(1024).decode().strip()
@@ -254,6 +246,7 @@ class WebSocketHandler(StreamRequestHandler):
 		self.valid_client = True
 		self.server._new_client_(self)
 
+
 	def make_handshake_response(self, key):
 		return \
 		  'HTTP/1.1 101 Switching Protocols\r\n'\
@@ -262,11 +255,13 @@ class WebSocketHandler(StreamRequestHandler):
 		  'Sec-WebSocket-Accept: %s\r\n'        \
 		  '\r\n' % self.calculate_response_key(key)
 
+
 	def calculate_response_key(self, key):
 		GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 		hash = sha1(key.encode() + GUID.encode())
 		response_key = b64encode(hash.digest()).strip()
 		return response_key.decode('ASCII')
+
 
 	def finish(self):
 		self.server._client_left_(self)
