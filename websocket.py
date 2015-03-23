@@ -13,21 +13,21 @@ else:
 
 
 
-# ---------------------- Websocket bits in bytes -----------------------
+
 '''
-	+-+-+-+-+-------+-+-------------+-------------------------------+
-	 0                   1                   2                   3
-	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-	+-+-+-+-+-------+-+-------------+-------------------------------+
-	|F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-	|I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
-	|N|V|V|V|       |S|             |   (if payload len==126/127)   |
-	| |1|2|3|       |K|             |                               |
-	+-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-	|     Extended payload length continued, if payload len == 127  |
-	+ - - - - - - - - - - - - - - - +-------------------------------+
-	|                     Payload Data continued ...                |
-	+---------------------------------------------------------------+
++-+-+-+-+-------+-+-------------+-------------------------------+
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-------+-+-------------+-------------------------------+
+|F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+|I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+|N|V|V|V|       |S|             |   (if payload len==126/127)   |
+| |1|2|3|       |K|             |                               |
++-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+|     Extended payload length continued, if payload len == 127  |
++ - - - - - - - - - - - - - - - +-------------------------------+
+|                     Payload Data continued ...                |
++---------------------------------------------------------------+
 '''
 
 FIN    = 0x80
@@ -81,12 +81,14 @@ class WebSocketsServer(ThreadingMixIn, TCPServer, API):
 	allow_reuse_address = True
 	daemon_threads = True # comment to keep threads alive until finished
 
-	# clients is list of dict:
-	#    {
-	#     'id'      : id,
-	#     'handler' : handler,
-	#     'address' : (addr, port)
-	#    }
+	'''
+	clients is a list of dict:
+	    {
+	     'id'      : id,
+	     'handler' : handler,
+	     'address' : (addr, port)
+	    }
+	'''
 	clients=[]
 	id_counter=0
 
