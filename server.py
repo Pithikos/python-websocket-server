@@ -19,7 +19,6 @@ def message_received(client, server, message):
 	print("Client(%d) said: %s" % (client['id'], message))
 
 
-PORT=13254
 PORT=9001
 server = WebSocketsServer(PORT)
 server.set_fn_new_client(new_client)
