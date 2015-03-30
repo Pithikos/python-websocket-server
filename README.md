@@ -22,19 +22,20 @@ You can get a feel of how to use the websocket server by running
 Then just open `client.html` in your browser and you should be able to send and receive messages.
 
 
-Using on your project
+Using in your project
 =======================
-In order to use the websocket server in your project, simply
-copy `websocket.py` to your project and `from websocket import WebsocketServer`.
-Then use the documented API below to manage the behaviour of your server.
+You can either simply copy/pase the *websocket_server.py* file in your project and use it directly
+or you can install the project directly from PyPi:
 
-By default the server doesn't do anything when events occur.
+    pip install websocket-server
+
+For further details check the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example code and the [API](https://github.com/Pithikos/python-websocket-server#api).
 
 
 API
 =======================
 
-The API is simply methods and properties of a `WebsocketServer` instance.
+The API is simply methods and properties of the `WebsocketServer` class.
 
 ## WebsocketServer
 
