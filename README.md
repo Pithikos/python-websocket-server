@@ -8,9 +8,9 @@ A minimal Websockets Server in Python with no external dependencies.
   * Multiple clients
   * No dependencies
   
-Notice that this websocket-server doesn't support the more advanced features
+Notice that this implementation does not support the more advanced features
 like SSL etc. The project is focused mainly on making it easy to run a
-websocket server for prototyping or testing.
+websocket server for prototyping, testing or for making a GUI for your application.
 
 
 Usage
@@ -29,7 +29,7 @@ or you can install the project directly from PyPi:
 
     pip install websocket-server
 
-For further details check the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example code and the [API](https://github.com/Pithikos/python-websocket-server#api).
+For coding details have a look at the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example and the [API](https://github.com/Pithikos/python-websocket-server#api).
 
 
 API
