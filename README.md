@@ -1,4 +1,4 @@
-Websockets Server
+Websocket Server
 =======================
 
 A minimal Websockets Server in Python with no external dependencies.
