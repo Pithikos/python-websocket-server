@@ -1,4 +1,4 @@
-from websocket import WebSocketsServer
+from python_websockets.websocket import WebSocketsServer
 
 
 # Called for every client connecting (after handshake)
