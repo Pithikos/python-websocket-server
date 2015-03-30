@@ -8,9 +8,9 @@ A minimal Websockets Server in Python with no external dependencies.
   * Multiple clients
   * No dependencies
   
-Notice that this Websocket Server doesn't support the more advanced features
-like SSL etc. The main usage for this server is to include it in your program
-to be able and talk with the browser.
+Notice that this websocket-server doesn't support the more advanced features
+like SSL etc. The project is focused mainly on making it easy to run a
+websocket server for prototyping or testing.
 
 
 Usage
@@ -25,7 +25,7 @@ Then just open `client.html` in your browser and you should be able to send and 
 Using on your project
 =======================
 In order to use the websocket server in your project, simply
-copy `websocket.py` to your project and `from websocket import WebSocketsServer`.
+copy `websocket.py` to your project and `from websocket import WebsocketServer`.
 Then use the documented API below to manage the behaviour of your server.
 
 By default the server doesn't do anything when events occur.
@@ -34,11 +34,11 @@ By default the server doesn't do anything when events occur.
 API
 =======================
 
-The API is simply methods and properties of a `WebSocketsServer` instance.
+The API is simply methods and properties of a `WebsocketServer` instance.
 
-## WebSocketsServer
+## WebsocketServer
 
-The WebSocketsServer takes two arguments: a `port` and a `hostname`.
+The WebsocketServer takes two arguments: a `port` and a `hostname`.
 By default `localhost` is used. However if you want to be able and connect
 to the server from the network you need to pass `0.0.0.0` as hostname.
 
@@ -75,12 +75,12 @@ passed in case you want to send messages to clients.
 
 Example:
 ````
-from websocket import WebSocketsServer
+from websocket_server import WebsocketServer
 
 def new_client(client, server):
 	server.send_message_to_all("Hey all, a new client has joined us")
 
-server = WebSocketsServer(13254)
+server = WebsocketServer(13254)
 server.set_fn_new_client(new_client)
 server.run_forever()
 ````

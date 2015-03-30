@@ -76,7 +76,7 @@ class API():
 
 # ------------------------- Implementation -----------------------------
 
-class WebSocketsServer(ThreadingMixIn, TCPServer, API):
+class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
 	allow_reuse_address = True
 	daemon_threads = True # comment to keep threads alive until finished
