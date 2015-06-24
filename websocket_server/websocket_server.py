@@ -103,7 +103,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 		self.message_received(self.handler_to_client(handler), self, msg)
 
 	def _ping_received_(self, handler, msg):
-		pass
+		handler.send_pong(msg)
 
 	def _pong_received_(self, handler, msg):
 		pass
@@ -219,7 +219,10 @@ class WebSocketHandler(StreamRequestHandler):
 	def send_message(self, message):
 		self.send_text(message)
 
-	def send_text(self, message):
+	def send_pong(self, message):
+		self.send_text(message, OPCODE_PONG)
+
+	def send_text(self, message, opcode=OPCODE_TEXT):
 		'''
 		NOTES
 		Fragmented(=continuation) messages are not being used since their usage
@@ -244,18 +247,18 @@ class WebSocketHandler(StreamRequestHandler):
 
 		# Normal payload
 		if payload_length <= 125:
-			header.append(FIN | OPCODE_TEXT)
+			header.append(FIN | opcode)
 			header.append(payload_length)
 
 		# Extended payload
 		elif payload_length >= 126 and payload_length <= 65535:
-			header.append(FIN | OPCODE_TEXT)
+			header.append(FIN | opcode)
 			header.append(PAYLOAD_LEN_EXT16)
 			header.extend(struct.pack(">H", payload_length))
 
 		# Huge extended payload
 		elif payload_length < 18446744073709551616:
-			header.append(FIN | OPCODE_TEXT)
+			header.append(FIN | opcode)
 			header.append(PAYLOAD_LEN_EXT64)
 			header.extend(struct.pack(">Q", payload_length))
 			
