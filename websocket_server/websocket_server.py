@@ -38,9 +38,12 @@ PAYLOAD_LEN = 0x7f
 PAYLOAD_LEN_EXT16 = 0x7e
 PAYLOAD_LEN_EXT64 = 0x7f
 
-OPCODE_TEXT = 0x01
-CLOSE_CONN  = 0x8
-
+OPCODE_CONTINUATION = 0x0
+OPCODE_TEXT         = 0x1
+OPCODE_BINARY       = 0x2
+OPCODE_CLOSE_CONN   = 0x8
+OPCODE_PING         = 0x9
+OPCODE_PONG         = 0xA
 
 # ------------------------------ Logging -------------------------------
 logger = logging.getLogger(__name__)
@@ -117,17 +120,34 @@ class WebSocketHandler(StreamRequestHandler, object):
 		opcode = b1 & OPCODE
 		masked = b2 & MASKED
 		payload_length = b2 & PAYLOAD_LEN
+		opcode_handler = None
 
 		if not b1:
 			logger.info("Client closed connection.")
 			self.keep_alive = 0
 			return
-		if opcode == CLOSE_CONN:
+		if opcode == OPCODE_CLOSE_CONN:
 			logger.info("Client asked to close connection.")
 			self.keep_alive = 0
 			return
 		if not masked:
 			logger.info("Client must always be masked.")
+			self.keep_alive = 0
+			return
+		if opcode == OPCODE_CONTINUATION:
+			logger.info("Continuation frames not handled.")
+			return
+		elif opcode == OPCODE_BINARY:
+			logger.info("Binary frames not handled.")
+			return
+		elif opcode == OPCODE_TEXT:
+			opcode_handler = self.server._message_received_
+		elif opcode == OPCODE_PING:
+			opcode_handler = self.server._ping_received_
+		elif opcode == OPCODE_PONG:
+			opcode_handler = self.server._pong_received_
+		else:
+			logger.info("Unknown opcode %#x." % opcode)
 			self.keep_alive = 0
 			return
 
@@ -141,7 +161,7 @@ class WebSocketHandler(StreamRequestHandler, object):
 		for char in self.read_bytes(payload_length):
 			char ^= masks[len(decoded) % 4]
 			decoded += chr(char)
-		self.server._message_received_(self, decoded)
+		opcode_handler(self, decoded)
 
 	def send_message(self, message):
 		self.send_text(message)
@@ -264,6 +284,12 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
 	def _message_received_(self, handler, msg):
 		self.message_received(self.handler_to_client(handler), self, msg)
+
+	def _ping_received_(self, handler, msg):
+		pass
+
+	def _pong_received_(self, handler, msg):
+		pass
 
 	def _new_client_(self, handler):
 		self.id_counter += 1
