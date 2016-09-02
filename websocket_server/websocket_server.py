@@ -254,7 +254,7 @@ class WebSocketHandler(StreamRequestHandler):
 		if key:
 			key = key.group(1)
 		else:
-			logging.warning("Client tried to connect but was missing a key")
+			logger.warning("Client tried to connect but was missing a key")
 			self.keep_alive = False
 			return
 		response = self.make_handshake_response(key)
@@ -285,7 +285,7 @@ def encode_to_UTF8(data):
 	try:
 		return data.encode('UTF-8')
 	except UnicodeEncodeError as e:
-		logging.error("Could not encode data to UTF-8 -- %s" % e)
+		logger.error("Could not encode data to UTF-8 -- %s" % e)
 		return False
 	except Exception as e:
 		raise(e)
