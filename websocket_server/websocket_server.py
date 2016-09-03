@@ -5,6 +5,7 @@ import re, sys
 import struct
 from base64 import b64encode
 from hashlib import sha1
+import logging
 
 if sys.version_info[0] < 3 :
 	from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
@@ -41,19 +42,21 @@ OPCODE_TEXT = 0x01
 CLOSE_CONN  = 0x8
 
 
+# ------------------------------ Logging -------------------------------
+logger = logging.getLogger(__name__)
 
 # -------------------------------- API ---------------------------------
 
 class API():
 	def run_forever(self):
 		try:
-			print("Listening on port %d for clients.." % self.port)
+			logger.info("Listening on port %d for clients.." % self.port)
 			self.serve_forever()
 		except KeyboardInterrupt:
 			self.server_close()
-			print("Server terminated.")
+			logger.info("Server terminated.")
 		except Exception as e:
-			print("ERROR: WebSocketsServer: "+str(e))
+			logger.error("ERROR: WebSocketsServer: " + str(e), exc_info=True)
 			exit(1)
 	def new_client(self, client, server):
 		pass
@@ -114,14 +117,14 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 		self.client_left(client, self)
 		if client in self.clients:
 			self.clients.remove(client)
-	
+
 	def _unicast_(self, to_client, msg):
 		to_client['handler'].send_message(msg)
 
 	def _multicast_(self, msg):
 		for client in self.clients:
 			self._unicast_(client, msg)
-		
+
 	def handler_to_client(self, handler):
 		for client in self.clients:
 			if client['handler'] == handler:
@@ -168,15 +171,15 @@ class WebSocketHandler(StreamRequestHandler):
 		payload_length = b2 & PAYLOAD_LEN
 
 		if not b1:
-			print("Client closed connection.")
+			logger.info("Client closed connection.")
 			self.keep_alive = 0
 			return
 		if opcode == CLOSE_CONN:
-			print("Client asked to close connection.")
+			logger.info("Client asked to close connection.")
 			self.keep_alive = 0
 			return
 		if not masked:
-			print("Client must always be masked.")
+			logger.info("Client must always be masked.")
 			self.keep_alive = 0
 			return
 
@@ -201,17 +204,17 @@ class WebSocketHandler(StreamRequestHandler):
 		Fragmented(=continuation) messages are not being used since their usage
 		is needed in very limited cases - when we don't know the payload length.
 		'''
-	
+
 		# Validate message
 		if isinstance(message, bytes):
 			message = try_decode_UTF8(message) # this is slower but assures we have UTF-8
 			if not message:
-				print("Can\'t send message, message is not valid UTF-8")
+				logger.warning("Can\'t send message, message is not valid UTF-8")
 				return False
 		elif isinstance(message, str) or isinstance(message, unicode):
 			pass
 		else:
-			print('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
+			logger.warning('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
 			return False
 
 		header  = bytearray()
@@ -234,7 +237,7 @@ class WebSocketHandler(StreamRequestHandler):
 			header.append(FIN | OPCODE_TEXT)
 			header.append(PAYLOAD_LEN_EXT64)
 			header.extend(struct.pack(">Q", payload_length))
-			
+
 		else:
 			raise Exception("Message is too big. Consider breaking it into chunks.")
 			return
@@ -251,14 +254,14 @@ class WebSocketHandler(StreamRequestHandler):
 		if key:
 			key = key.group(1)
 		else:
-			print("Client tried to connect but was missing a key")
+			logger.warning("Client tried to connect but was missing a key")
 			self.keep_alive = False
 			return
 		response = self.make_handshake_response(key)
 		self.handshake_done = self.request.send(response.encode())
 		self.valid_client = True
 		self.server._new_client_(self)
-		
+
 	def make_handshake_response(self, key):
 		return \
 		  'HTTP/1.1 101 Switching Protocols\r\n'\
@@ -266,7 +269,7 @@ class WebSocketHandler(StreamRequestHandler):
 		  'Connection: Upgrade\r\n'             \
 		  'Sec-WebSocket-Accept: %s\r\n'        \
 		  '\r\n' % self.calculate_response_key(key)
-		
+
 	def calculate_response_key(self, key):
 		GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 		hash = sha1(key.encode() + GUID.encode())
@@ -282,7 +285,7 @@ def encode_to_UTF8(data):
 	try:
 		return data.encode('UTF-8')
 	except UnicodeEncodeError as e:
-		print("Could not encode data to UTF-8 -- %s" % e)
+		logger.error("Could not encode data to UTF-8 -- %s" % e)
 		return False
 	except Exception as e:
 		raise(e)
@@ -297,7 +300,7 @@ def try_decode_UTF8(data):
 		return False
 	except Exception as e:
 		raise(e)
-		
+
 
 
 # This is only for testing purposes
