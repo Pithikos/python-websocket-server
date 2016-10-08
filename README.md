@@ -40,7 +40,7 @@ The API is simply methods and properties of the `WebsocketServer` class.
 ## WebsocketServer
 
 The WebsocketServer takes two arguments: a `port` and a `hostname`.
-By default `localhost` is used. However if you want to be able and connect
+By default the localhost `127.0.0.1` is used. However if you want to be able and connect
 to the server from the network you need to pass `0.0.0.0` as hostname e.g. `WebsocketServer(13254, host='0.0.0.0')`.
 
 ###Properties
