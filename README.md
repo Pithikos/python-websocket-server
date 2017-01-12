@@ -24,8 +24,8 @@ Then just open `client.html` in your browser and you should be able to send and 
 
 Using in your project
 =======================
-You can either simply copy/paste the *websocket_server.py* file in your project and use it directly
-or you can install the project directly from PyPi:
+You can either simply copy/paste the *websocket_server.py* file in your project and use it directly (recommended)
+or you can install the project directly from PyPi (might not be up-to-date):
 
     pip install websocket-server
 
