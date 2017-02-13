@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 # -------------------------------- API ---------------------------------
 
-class API():
+class API(object):
 	def run_forever(self):
 		try:
 			logger.info("Listening on port %d for clients.." % self.port)
@@ -132,7 +132,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
 
 
-class WebSocketHandler(StreamRequestHandler):
+class WebSocketHandler(StreamRequestHandler, object):
 
 	def __init__(self, socket, addr, server):
 		self.server=server
