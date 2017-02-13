@@ -192,6 +192,12 @@ class WebSocketHandler(StreamRequestHandler, object):
 
 		self.request.send(header + payload)
 
+	def authenticate(message):
+		'''
+		This method is meant to be overriden to inject some authentication mechanism
+		'''
+		return True
+
 	def handshake(self):
 		message = self.request.recv(1024).decode().strip()
 		upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
@@ -203,6 +209,11 @@ class WebSocketHandler(StreamRequestHandler, object):
 			key = key.group(1)
 		else:
 			logger.warning("Client tried to connect but was missing a key")
+			self.keep_alive = False
+			return
+		if not self.authenticate(message):
+			logger.warn("Failed to authenticate a client.")
+			self.request.send(self.make_unauthorized_response().encode())
 			self.keep_alive = False
 			return
 		response = self.make_handshake_response(key)
@@ -217,6 +228,9 @@ class WebSocketHandler(StreamRequestHandler, object):
 		  'Connection: Upgrade\r\n'             \
 		  'Sec-WebSocket-Accept: %s\r\n'        \
 		  '\r\n' % self.calculate_response_key(key)
+
+	def make_unauthorized_response(self):
+		return 'HTTP/1.1 403 Forbidden\r\n\r\n'
 
 	def calculate_response_key(self, key):
 		GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
