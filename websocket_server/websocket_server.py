@@ -79,58 +79,6 @@ class API(object):
 
 # ------------------------- Implementation -----------------------------
 
-class WebsocketServer(ThreadingMixIn, TCPServer, API):
-
-	allow_reuse_address = True
-	daemon_threads = True # comment to keep threads alive until finished
-
-	'''
-	clients is a list of dict:
-	    {
-	     'id'      : id,
-	     'handler' : handler,
-	     'address' : (addr, port)
-	    }
-	'''
-	clients=[]
-	id_counter=0
-
-	def __init__(self, port, host='127.0.0.1'):
-		self.port=port
-		TCPServer.__init__(self, (host, port), WebSocketHandler)
-
-	def _message_received_(self, handler, msg):
-		self.message_received(self.handler_to_client(handler), self, msg)
-
-	def _new_client_(self, handler):
-		self.id_counter += 1
-		client={
-			'id'      : self.id_counter,
-			'handler' : handler,
-			'address' : handler.client_address
-		}
-		self.clients.append(client)
-		self.new_client(client, self)
-
-	def _client_left_(self, handler):
-		client=self.handler_to_client(handler)
-		self.client_left(client, self)
-		if client in self.clients:
-			self.clients.remove(client)
-
-	def _unicast_(self, to_client, msg):
-		to_client['handler'].send_message(msg)
-
-	def _multicast_(self, msg):
-		for client in self.clients:
-			self._unicast_(client, msg)
-
-	def handler_to_client(self, handler):
-		for client in self.clients:
-			if client['handler'] == handler:
-				return client
-
-
 
 class WebSocketHandler(StreamRequestHandler, object):
 
@@ -278,6 +226,58 @@ class WebSocketHandler(StreamRequestHandler, object):
 
 	def finish(self):
 		self.server._client_left_(self)
+
+
+class WebsocketServer(ThreadingMixIn, TCPServer, API):
+
+	allow_reuse_address = True
+	daemon_threads = True # comment to keep threads alive until finished
+
+	'''
+	clients is a list of dict:
+	    {
+	     'id'      : id,
+	     'handler' : handler,
+	     'address' : (addr, port)
+	    }
+	'''
+	clients=[]
+	id_counter=0
+
+	def __init__(self, port, host='127.0.0.1', handler=WebSocketHandler):
+		self.port=port
+		TCPServer.__init__(self, (host, port), handler)
+
+	def _message_received_(self, handler, msg):
+		self.message_received(self.handler_to_client(handler), self, msg)
+
+	def _new_client_(self, handler):
+		self.id_counter += 1
+		client={
+			'id'      : self.id_counter,
+			'handler' : handler,
+			'address' : handler.client_address
+		}
+		self.clients.append(client)
+		self.new_client(client, self)
+
+	def _client_left_(self, handler):
+		client=self.handler_to_client(handler)
+		self.client_left(client, self)
+		if client in self.clients:
+			self.clients.remove(client)
+
+	def _unicast_(self, to_client, msg):
+		to_client['handler'].send_message(msg)
+
+	def _multicast_(self, msg):
+		for client in self.clients:
+			self._unicast_(client, msg)
+
+	def handler_to_client(self, handler):
+		for client in self.clients:
+			if client['handler'] == handler:
+				return client
 
 
 
