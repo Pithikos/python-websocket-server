@@ -1,7 +1,12 @@
 Testing
 --------
 
-Run server
+Run unit tests
+
+    pytest
+
+
+Run functional tests
 
      python message_lengths.py
 

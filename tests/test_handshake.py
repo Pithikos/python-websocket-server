@@ -1,30 +1,29 @@
 import _bootstrap_
 from websocket_server import *
+import pytest
+
 
 class DummyWebsocketHandler(WebSocketHandler):
     def __init__(self, *_):
         pass
 
-handler = DummyWebsocketHandler()
+@pytest.fixture
+def websocket_handler():
+	return DummyWebsocketHandler()
 
-pairs = [
-    # Key                        # Response
-	('zyjFH2rQwrTtNFk5lwEMQg==', '2hnZADGmT/V1/w1GJYBtttUKASY='),
-	('XJuxlsdq0QrVyKwA/D9D5A==', 'tZ5RV3pw7nP9cF+HDvTd89WJKj8=')
-]
-
-def test_hash_calculations_for_response():
+def test_hash_calculations_for_response(websocket_handler):
 	key = 'zyjFH2rQwrTtNFk5lwEMQg=='
-	resp = handler.calculate_response_key(key)
-	assert resp == '2hnZADGmT/V1/w1GJYBtttUKASY='
+	expected_key = '2hnZADGmT/V1/w1GJYBtttUKASY='
+	assert websocket_handler.calculate_response_key(key) == expected_key
 
-def test_response_messages():
+
+def test_response_messages(websocket_handler):
 	key = 'zyjFH2rQwrTtNFk5lwEMQg=='
-	expect = \
+	expected = \
 		'HTTP/1.1 101 Switching Protocols\r\n'\
 		'Upgrade: websocket\r\n'              \
 		'Connection: Upgrade\r\n'             \
 		'Sec-WebSocket-Accept: 2hnZADGmT/V1/w1GJYBtttUKASY=\r\n'\
 		'\r\n'
-	resp = handler.make_handshake_response(key)
-	assert resp == expect
+	handshake_content = websocket_handler.make_handshake_response(key)
+	assert handshake_content == expected
