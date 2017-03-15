@@ -14,7 +14,7 @@ else:
     from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
 
 logger = logging.getLogger(__name__)
-
+logging.basicConfig()
 
 '''
 +-+-+-+-+-------+-+-------------+-------------------------------+
@@ -105,8 +105,9 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
     clients=[]
     id_counter=0
 
-    def __init__(self, port, host='127.0.0.1'):
-        self.port=port
+    def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING):
+        logger.setLevel(loglevel)
+        self.port = port
         TCPServer.__init__(self, (host, port), WebSocketHandler)
 
     def _message_received_(self, handler, msg):
