@@ -331,9 +331,3 @@ def try_decode_UTF8(data):
         return False
     except Exception as e:
         raise(e)
-
-
-# This is only for testing purposes
-class DummyWebsocketHandler(WebSocketHandler):
-    def __init__(self, *_):
-        pass
