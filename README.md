@@ -50,14 +50,14 @@ The WebsocketServer can be initialized with the below parameters.
 *`loglevel`* - logging level to print. By default WARNING is used. You can use `logging.DEBUG` or `logging.INFO` for more verbose output.
 
 
-###Properties
+### Properties
 
 | Property | Description          |
 |----------|----------------------|
 | clients  | A list of `client`   |
 
 
-###Methods
+### Methods
 
 | Method                      | Description                                                                           | Takes           | Gives |
 |-----------------------------|---------------------------------------------------------------------------------------|-----------------|-------|
@@ -68,7 +68,7 @@ The WebsocketServer can be initialized with the below parameters.
 | `send_message_to_all()`     | Sends a `message` to **all** connected clients. The message is a simple string.       | message         | None  |
 
 
-###Callback functions
+### Callback functions
 
 | Set by                      | Description                                       | Parameters              |
 |-----------------------------|---------------------------------------------------|-------------------------|
@@ -93,7 +93,7 @@ server.set_fn_new_client(new_client)
 server.run_forever()
 ````
 
-##Client
+## Client
 
 Client is just a dictionary passed along methods.
 
