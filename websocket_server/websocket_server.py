@@ -38,16 +38,19 @@ PAYLOAD_LEN = 0x7f
 PAYLOAD_LEN_EXT16 = 0x7e
 PAYLOAD_LEN_EXT64 = 0x7f
 
-OPCODE_TEXT = 0x01
-CLOSE_CONN  = 0x8
-
+OPCODE_CONTINUATION = 0x0
+OPCODE_TEXT         = 0x1
+OPCODE_BINARY       = 0x2
+OPCODE_CLOSE_CONN   = 0x8
+OPCODE_PING         = 0x9
+OPCODE_PONG         = 0xA
 
 # ------------------------------ Logging -------------------------------
 logger = logging.getLogger(__name__)
 
 # -------------------------------- API ---------------------------------
 
-class API():
+class API(object):
 	def run_forever(self):
 		try:
 			logger.info("Listening on port %d for clients.." % self.port)
@@ -79,60 +82,8 @@ class API():
 
 # ------------------------- Implementation -----------------------------
 
-class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
-	allow_reuse_address = True
-	daemon_threads = True # comment to keep threads alive until finished
-
-	'''
-	clients is a list of dict:
-	    {
-	     'id'      : id,
-	     'handler' : handler,
-	     'address' : (addr, port)
-	    }
-	'''
-	clients=[]
-	id_counter=0
-
-	def __init__(self, port, host='127.0.0.1'):
-		self.port=port
-		TCPServer.__init__(self, (host, port), WebSocketHandler)
-
-	def _message_received_(self, handler, msg):
-		self.message_received(self.handler_to_client(handler), self, msg)
-
-	def _new_client_(self, handler):
-		self.id_counter += 1
-		client={
-			'id'      : self.id_counter,
-			'handler' : handler,
-			'address' : handler.client_address
-		}
-		self.clients.append(client)
-		self.new_client(client, self)
-
-	def _client_left_(self, handler):
-		client=self.handler_to_client(handler)
-		self.client_left(client, self)
-		if client in self.clients:
-			self.clients.remove(client)
-
-	def _unicast_(self, to_client, msg):
-		to_client['handler'].send_message(msg)
-
-	def _multicast_(self, msg):
-		for client in self.clients:
-			self._unicast_(client, msg)
-
-	def handler_to_client(self, handler):
-		for client in self.clients:
-			if client['handler'] == handler:
-				return client
-
-
-
-class WebSocketHandler(StreamRequestHandler):
+class WebSocketHandler(StreamRequestHandler, object):
 
 	def __init__(self, socket, addr, server):
 		self.server=server
@@ -169,17 +120,34 @@ class WebSocketHandler(StreamRequestHandler):
 		opcode = b1 & OPCODE
 		masked = b2 & MASKED
 		payload_length = b2 & PAYLOAD_LEN
+		opcode_handler = None
 
 		if not b1:
 			logger.info("Client closed connection.")
 			self.keep_alive = 0
 			return
-		if opcode == CLOSE_CONN:
+		if opcode == OPCODE_CLOSE_CONN:
 			logger.info("Client asked to close connection.")
 			self.keep_alive = 0
 			return
 		if not masked:
 			logger.info("Client must always be masked.")
+			self.keep_alive = 0
+			return
+		if opcode == OPCODE_CONTINUATION:
+			logger.info("Continuation frames not handled.")
+			return
+		elif opcode == OPCODE_BINARY:
+			logger.info("Binary frames not handled.")
+			return
+		elif opcode == OPCODE_TEXT:
+			opcode_handler = self.server._message_received_
+		elif opcode == OPCODE_PING:
+			opcode_handler = self.server._ping_received_
+		elif opcode == OPCODE_PONG:
+			opcode_handler = self.server._pong_received_
+		else:
+			logger.info("Unknown opcode %#x." % opcode)
 			self.keep_alive = 0
 			return
 
@@ -193,12 +161,15 @@ class WebSocketHandler(StreamRequestHandler):
 		for char in self.read_bytes(payload_length):
 			char ^= masks[len(decoded) % 4]
 			decoded += chr(char)
-		self.server._message_received_(self, decoded)
+		opcode_handler(self, decoded)
 
 	def send_message(self, message):
 		self.send_text(message)
 
-	def send_text(self, message):
+	def send_pong(self, message):
+		self.send_text(message, OPCODE_PONG)
+
+	def send_text(self, message, opcode=OPCODE_TEXT):
 		'''
 		NOTES
 		Fragmented(=continuation) messages are not being used since their usage
@@ -223,18 +194,18 @@ class WebSocketHandler(StreamRequestHandler):
 
 		# Normal payload
 		if payload_length <= 125:
-			header.append(FIN | OPCODE_TEXT)
+			header.append(FIN | opcode)
 			header.append(payload_length)
 
 		# Extended payload
 		elif payload_length >= 126 and payload_length <= 65535:
-			header.append(FIN | OPCODE_TEXT)
+			header.append(FIN | opcode)
 			header.append(PAYLOAD_LEN_EXT16)
 			header.extend(struct.pack(">H", payload_length))
 
 		# Huge extended payload
 		elif payload_length < 18446744073709551616:
-			header.append(FIN | OPCODE_TEXT)
+			header.append(FIN | opcode)
 			header.append(PAYLOAD_LEN_EXT64)
 			header.extend(struct.pack(">Q", payload_length))
 
@@ -243,6 +214,12 @@ class WebSocketHandler(StreamRequestHandler):
 			return
 
 		self.request.send(header + payload)
+
+	def authenticate(message):
+		'''
+		This method is meant to be overriden to inject some authentication mechanism
+		'''
+		return True
 
 	def handshake(self):
 		message = self.request.recv(1024).decode().strip()
@@ -255,6 +232,11 @@ class WebSocketHandler(StreamRequestHandler):
 			key = key.group(1)
 		else:
 			logger.warning("Client tried to connect but was missing a key")
+			self.keep_alive = False
+			return
+		if not self.authenticate(message):
+			logger.warn("Failed to authenticate a client.")
+			self.request.send(self.make_unauthorized_response().encode())
 			self.keep_alive = False
 			return
 		response = self.make_handshake_response(key)
@@ -270,6 +252,9 @@ class WebSocketHandler(StreamRequestHandler):
 		  'Sec-WebSocket-Accept: %s\r\n'        \
 		  '\r\n' % self.calculate_response_key(key)
 
+	def make_unauthorized_response(self):
+		return 'HTTP/1.1 403 Forbidden\r\n\r\n'
+
 	def calculate_response_key(self, key):
 		GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 		hash = sha1(key.encode() + GUID.encode())
@@ -278,6 +263,64 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def finish(self):
 		self.server._client_left_(self)
+
+
+class WebsocketServer(ThreadingMixIn, TCPServer, API):
+
+	allow_reuse_address = True
+	daemon_threads = True # comment to keep threads alive until finished
+
+	'''
+	clients is a list of dict:
+	    {
+	     'id'      : id,
+	     'handler' : handler,
+	     'address' : (addr, port)
+	    }
+	'''
+	clients=[]
+	id_counter=0
+
+	def __init__(self, port, host='127.0.0.1', handler=WebSocketHandler):
+		self.port=port
+		TCPServer.__init__(self, (host, port), handler)
+
+	def _message_received_(self, handler, msg):
+		self.message_received(self.handler_to_client(handler), self, msg)
+
+	def _ping_received_(self, handler, msg):
+		handler.send_pong(msg)
+
+	def _pong_received_(self, handler, msg):
+		pass
+
+	def _new_client_(self, handler):
+		self.id_counter += 1
+		client={
+			'id'      : self.id_counter,
+			'handler' : handler,
+			'address' : handler.client_address
+		}
+		self.clients.append(client)
+		self.new_client(client, self)
+
+	def _client_left_(self, handler):
+		client=self.handler_to_client(handler)
+		self.client_left(client, self)
+		if client in self.clients:
+			self.clients.remove(client)
+
+	def _unicast_(self, to_client, msg):
+		to_client['handler'].send_message(msg)
+
+	def _multicast_(self, msg):
+		for client in self.clients:
+			self._unicast_(client, msg)
+
+	def handler_to_client(self, handler):
+		for client in self.clients:
+			if client['handler'] == handler:
+				return client
 
 
 
