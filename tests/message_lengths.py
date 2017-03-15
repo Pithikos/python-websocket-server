@@ -1,11 +1,11 @@
 import _bootstrap_
-from websocket import WebSocketsServer
+from websocket_server import WebsocketServer
 from time import sleep
 from testsuite.messages import *
 
 '''
-This creates just a server that will send a different message to every new connection: 
-    
+This creates just a server that will send a different message to every new connection:
+
     1. A message of length less than 126
     2. A message of length 126
     3. A message of length 127
@@ -13,8 +13,8 @@ This creates just a server that will send a different message to every new conne
     5. A message above 1024
     6. A message above 65K
     7. An enormous message (well beyond 65K)
-    
-    
+
+
 Reconnect to get the next message
 '''
 
@@ -52,6 +52,6 @@ def new_client(client, server):
 
 
 PORT=9001
-server = WebSocketsServer(PORT)
+server = WebsocketServer(PORT)
 server.set_fn_new_client(new_client)
 server.run_forever()
