@@ -7,7 +7,7 @@ A minimal Websockets Server in Python with no external dependencies.
   * Clean simple API
   * Multiple clients
   * No dependencies
-  
+
 Notice that this implementation does not support the more advanced features
 like SSL etc. The project is focused mainly on making it easy to run a
 websocket server for prototyping, testing or for making a GUI for your application.
@@ -18,16 +18,18 @@ Usage
 You can get a feel of how to use the websocket server by running
 
     python server.py
-    
+
 Then just open `client.html` in your browser and you should be able to send and receive messages.
 
 
 Using in your project
 =======================
-You can either simply copy/paste the *websocket_server.py* file in your project and use it directly (recommended)
-or you can install the project directly from PyPi (might not be up-to-date):
 
-    pip install websocket-server
+You can use the project in three ways.
+
+  1. Copy/paste the *websocket_server.py* file in your project and use it directly
+  2. `pip install git://github.com/Pithikos/python-websocket-server` (latest code)
+  3. `pip install websocket-server` (might not be up-to-date)
 
 For coding details have a look at the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example and the [API](https://github.com/Pithikos/python-websocket-server#api).
 
@@ -97,4 +99,3 @@ Client is just a dictionary passed along methods.
 	'address' : (addr, port)
 }
 ````
-
