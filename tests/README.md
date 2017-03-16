@@ -1,6 +1,11 @@
 Testing
 --------
 
+Install prerequisites
+
+    pip install pytest websocket-client
+
+
 Run unit tests
 
     pytest
