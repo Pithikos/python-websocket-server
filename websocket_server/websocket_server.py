@@ -90,20 +90,32 @@ class API():
 # ------------------------- Implementation -----------------------------
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
+    """
+	A websocket server waiting for clients to connect.
+
+    Args:
+        port(int): Port to bind to
+        host(str): Hostname or IP to listen for connections. By default 127.0.0.1
+            is being used. To accept connections from any client, you should use
+            0.0.0.0.
+        loglevel: Logging level from logging module to use for logging. By default
+            warnings and errors are being logged.
+
+    Properties:
+        clients(list): A list of connected clients. A client is a dictionary
+            like below.
+                {
+                 'id'      : id,
+                 'handler' : handler,
+                 'address' : (addr, port)
+                }
+    """
 
     allow_reuse_address = True
-    daemon_threads = True # comment to keep threads alive until finished
+    daemon_threads = True  # comment to keep threads alive until finished
 
-    '''
-    clients is a list of dict:
-        {
-         'id'      : id,
-         'handler' : handler,
-         'address' : (addr, port)
-        }
-    '''
-    clients=[]
-    id_counter=0
+    clients = []
+    id_counter = 0
 
     def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING):
         logger.setLevel(loglevel)
