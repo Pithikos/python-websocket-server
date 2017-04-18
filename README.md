@@ -12,6 +12,10 @@ Notice that this implementation does not support the more advanced features
 like SSL etc. The project is focused mainly on making it easy to run a
 websocket server for prototyping, testing or for making a GUI for your application.
 
+I'm out of work. If this project reduced your development time please show your appreciation.
+
+[![Donate](https://www.paypal.com/en_US/i/btn/x-click-but21.gif)](https://www.paypal.me/seferidis)
+
 
 Usage
 =======================
