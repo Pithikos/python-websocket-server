@@ -291,7 +291,27 @@ class WebSocketHandler(StreamRequestHandler):
         self.request.send(header + payload)
 
     def handshake(self):
-        message = self.request.recv(1024).decode().strip()
+        #
+        # CMT: The original implementation had a single call to
+        #      self.request.recv(1024).decode()
+        #      which sometimes returns with only part of the GET... handshake message.
+        #      Thus it fails OFTEN!
+        #      A complete handshake message seems to always end in a double \r\n sequence,
+        #      so I added a while to keep getting the message parts until it has a full handshake message
+        #      I also added the nParts counter so that in a debugger you can break on this and examine the
+        #      number and content of each part that is recv'd.
+        #
+        message = ""
+        nParts = 0
+        while not  message.endswith("\r\n\r\n") :           # A complete message has this at the end
+            message += self.request.recv(1024).decode()
+            nParts += 1
+        #
+        # CMT: I'm not sure why this message is being "strip"ped, but it messes up
+        #      the key regular expression below, since the terminating \r\n is stripped off.
+        #      My somewhat kludgy fix is to put the terminating \r\n back on message.
+        #
+        message = message.strip() + "\r\n"
         upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
         if not upgrade:
             self.keep_alive = False
