@@ -257,7 +257,9 @@ class WebSocketHandler(StreamRequestHandler):
             if not message:
                 logger.warning("Can\'t send message, message is not valid UTF-8")
                 return False
-        elif isinstance(message, str) or isinstance(message, unicode):
+        elif sys.version_info < (3,0) and (isinstance(message, str) or isinstance(message, unicode)):
+            pass
+        elif isinstance(message, str):
             pass
         else:
             logger.warning('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
