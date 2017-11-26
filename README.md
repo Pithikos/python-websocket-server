@@ -81,7 +81,7 @@ The client passed to the callback is the client that left, sent the message, etc
 
 
 Example:
-````
+````py
 import logging
 from websocket_server import WebsocketServer
 
@@ -97,10 +97,10 @@ server.run_forever()
 
 Client is just a dictionary passed along methods.
 
-````
+```py
 {
 	'id'      : client_id,
 	'handler' : client_handler,
 	'address' : (addr, port)
 }
-````
+```
