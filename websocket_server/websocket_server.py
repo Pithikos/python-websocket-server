@@ -49,7 +49,7 @@ OPCODE_PONG         = 0xA
 
 # -------------------------------- API ---------------------------------
 
-class API():
+class API(object):
 
     def run_forever(self):
         try:
@@ -71,6 +71,9 @@ class API():
     def message_received(self, client, server, message):
         pass
 
+    def authenticate(self, msg):
+        return True
+
     def set_fn_new_client(self, fn):
         self.new_client = fn
 
@@ -79,6 +82,9 @@ class API():
 
     def set_fn_message_received(self, fn):
         self.message_received = fn
+
+    def set_fn_authenticate(self, fn):
+        self.authenticate = fn
 
     def send_message(self, client, msg):
         self._unicast_(client, msg)
@@ -147,6 +153,9 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         if client in self.clients:
             self.clients.remove(client)
 
+    def _authenticate_(self, msg):
+        return self.authenticate(msg)
+
     def _unicast_(self, to_client, msg):
         to_client['handler'].send_message(msg)
 
@@ -160,7 +169,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 return client
 
 
-class WebSocketHandler(StreamRequestHandler):
+class WebSocketHandler(StreamRequestHandler, object):
 
     def __init__(self, socket, addr, server):
         self.server = server
@@ -305,6 +314,11 @@ class WebSocketHandler(StreamRequestHandler):
             logger.warning("Client tried to connect but was missing a key")
             self.keep_alive = False
             return
+        if not self.server._authenticate_(message):
+            logger.warning("Failed to authenticate a client.")
+            self.request.send(self.make_unauthorized_response().encode())
+            self.keep_alive = False
+            return
         response = self.make_handshake_response(key)
         self.handshake_done = self.request.send(response.encode())
         self.valid_client = True
@@ -317,6 +331,9 @@ class WebSocketHandler(StreamRequestHandler):
           'Connection: Upgrade\r\n'             \
           'Sec-WebSocket-Accept: %s\r\n'        \
           '\r\n' % self.calculate_response_key(key)
+
+    def make_unauthorized_response(self):
+        return 'HTTP/1.1 403 Forbidden\r\n\r\n'
 
     def calculate_response_key(self, key):
         GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
