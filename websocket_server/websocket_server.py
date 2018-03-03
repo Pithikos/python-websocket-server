@@ -298,7 +298,7 @@ class WebSocketHandler(StreamRequestHandler):
         except Exception as e:
             self.keep_alive = False
             return
-	upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
+        upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
         if not upgrade:
             self.keep_alive = False
             return
