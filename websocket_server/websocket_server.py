@@ -245,6 +245,8 @@ class WebSocketHandler(StreamRequestHandler):
     def send_pong(self, message):
         self.send_text(message, OPCODE_PONG)
 
+    text_to_send = []
+    sendding_text = False
     def send_text(self, message, opcode=OPCODE_TEXT):
         """
         Important: Fragmented(=continuation) messages are not supported since
@@ -290,7 +292,12 @@ class WebSocketHandler(StreamRequestHandler):
             raise Exception("Message is too big. Consider breaking it into chunks.")
             return
 
-        self.request.send(header + payload)
+	self.text_to_send.insert(0, header + payload)
+        if not self.sendding_text: 
+            self.sendding_text = True
+            while len(self.text_to_send) > 0:
+                self.request.sendall(self.text_to_send.pop())
+            self.sendding_text = False
 
     def handshake(self):
         message = self.request.recv(1024).decode().strip()
