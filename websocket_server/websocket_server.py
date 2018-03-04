@@ -4,6 +4,7 @@
 import re
 import sys
 import struct
+import errno
 from base64 import b64encode
 from hashlib import sha1
 import logging
@@ -59,8 +60,13 @@ class API():
             self.server_close()
             logger.info("Server terminated.")
         except Exception as e:
-            logger.error(str(e), exc_info=True)
-            exit(1)
+            if e.errno != errno.EBADF:
+                logger.error(str(e), exc_info=True)
+                exit(1)
+
+    def terminate(self):
+        self.shutdown()
+        logger.info("Server terminated.")
 
     def new_client(self, client, server):
         pass
