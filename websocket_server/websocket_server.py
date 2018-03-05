@@ -310,15 +310,17 @@ class WebSocketHandler(StreamRequestHandler):
         self.valid_client = True
         self.server._new_client_(self)
 
-    def make_handshake_response(self, key):
+    @classmethod
+    def make_handshake_response(cls, key):
         return \
           'HTTP/1.1 101 Switching Protocols\r\n'\
           'Upgrade: websocket\r\n'              \
           'Connection: Upgrade\r\n'             \
           'Sec-WebSocket-Accept: %s\r\n'        \
-          '\r\n' % self.calculate_response_key(key)
+          '\r\n' % cls.calculate_response_key(key)
 
-    def calculate_response_key(self, key):
+    @classmethod
+    def calculate_response_key(cls, key):
         GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
         hash = sha1(key.encode() + GUID.encode())
         response_key = b64encode(hash.digest()).strip()
