@@ -23,8 +23,8 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            virtualenv .env
-            source .env
+            python3 -m venv .env
+            . venv/bin/activate
             pip install tox
 
       - run:
