@@ -1,5 +1,6 @@
 import _bootstrap_
 from websocket_server import *
+
 import pytest
 
 
@@ -7,9 +8,11 @@ class DummyWebsocketHandler(WebSocketHandler):
     def __init__(self, *_):
         pass
 
+
 @pytest.fixture
 def websocket_handler():
 	return DummyWebsocketHandler()
+
 
 def test_hash_calculations_for_response(websocket_handler):
 	key = 'zyjFH2rQwrTtNFk5lwEMQg=='

@@ -3,7 +3,8 @@ Testing
 
 Install prerequisites
 
-    pip install pytest websocket-client
+    virtualenv .env -p python3 --clear && . .env/bin/activate
+    pip install -r tests/requirements.txt
 
 
 Run unit tests

@@ -2,67 +2,95 @@ from time import sleep
 import logging
 from threading import Thread
 
+import pytest
+from websocket import create_connection  # websocket-client
+
 import _bootstrap_
 from websocket_server import WebsocketServer
-from testsuite.messages import *
-
-from websocket import create_connection
-
-'''
-This creates just a server that will send a different message to every new connection:
-
-    1. A message of length less than 126
-    2. A message of length 126
-    3. A message of length 127
-    4. A message of length bigger than 127
-    5. A message above 1024
-    6. A message above 65K
-    7. An enormous message (well beyond 65K)
-
-Reconnect to get the next message
-'''
 
 
-counter = 0
-
-# Called for every client connecting (after handshake)
-def new_client(client, server):
-	print("New client connected and was given id %d" % client['id'])
-	global counter
-	if counter == 0:
-		print("Sending message 1 of length %d" % len(msg_125B))
-		server.send_message(client, msg_125B)
-	elif counter == 1:
-		print("Sending message 2 of length %d" % len(msg_126B))
-		server.send_message(client, msg_126B)
-	elif counter == 2:
-		print("Sending message 3 of length %d" % len(msg_127B))
-		server.send_message(client, msg_127B)
-	elif counter == 3:
-		print("Sending message 4 of length %d" % len(msg_208B))
-		server.send_message(client, msg_208B)
-	elif counter == 4:
-		print("Sending message 5 of length %d" % len(msg_1251B))
-		server.send_message(client, msg_1251B)
-	elif counter == 5:
-		print("Sending message 6 of length %d" % len(msg_68KB))
-		server.send_message(client, msg_68KB)
-	elif counter == 6:
-		print("Sending message 7 of length %d" % len(msg_1500KB))
-		server.send_message(client, msg_1500KB)
-	else:
-		print("No errors")
-	counter += 1
+@pytest.fixture(scope='function')
+def server():
+    """ Returns the response of a server after"""
+    s = WebsocketServer(0, loglevel=logging.DEBUG)
+    server_thread = Thread(target=s.run_forever)
+    server_thread.daemon = True
+    server_thread.start()
+    yield s
+    s.server_close()
 
 
-PORT = 9001
-server = WebsocketServer(PORT, loglevel=logging.DEBUG)
-server.set_fn_new_client(new_client)
+@pytest.fixture
+def session(server):
+    ws = create_connection("ws://{}:{}".format(*server.server_address))
+    yield ws, server
+    ws.close()
 
-server_thread = Thread(target=server.run_forever)
 
-server_thread.start()
+def test_text_message_of_length_1(session):
+    client, server = session
+    server.send_message_to_all('$')
+    assert client.recv() == '$'
 
-print('TEST')
 
-ws = create_connection("ws://localhost:%d" % PORT)
+def test_text_message_of_length_125B(session):
+    client, server = session
+    msg = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqr125'
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_of_length_126B(session):
+    client, server = session
+    msg = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrs126'
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_of_length_127B(session):
+    client, server = session
+    msg = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrst127'
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_of_length_208B(session):
+    client, server = session
+    msg = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvw208'
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_of_length_1251B(session):
+    client, server = session
+    msg = ('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'\
+          'abcdefghijklmnopqr125'*10)+'1'
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_of_length_68KB(session):
+    client, server = session
+    msg = '$'+('a'*67993)+'68000'+'^'
+    assert len(msg) == 68000
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_of_length_1500KB(session):
+    """ An enormous message (well beyond 65K) """
+    client, server = session
+    msg = '$'+('a'*1499991)+'1500000'+'^'
+    assert len(msg) == 1500000
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
