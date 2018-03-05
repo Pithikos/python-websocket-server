@@ -190,6 +190,10 @@ class WebSocketHandler(StreamRequestHandler):
     def read_next_message(self):
         try:
             b1, b2 = self.read_bytes(2)
+        except ConnectionResetError:
+            logger.info("Client closed connection.")
+            self.keep_alive = 0
+            return
         except ValueError as e:
             b1, b2 = 0, 0
 
@@ -198,10 +202,6 @@ class WebSocketHandler(StreamRequestHandler):
         masked = b2 & MASKED
         payload_length = b2 & PAYLOAD_LEN
 
-        if not b1:
-            logger.info("Client closed connection.")
-            self.keep_alive = 0
-            return
         if opcode == OPCODE_CLOSE_CONN:
             logger.info("Client asked to close connection.")
             self.keep_alive = 0
