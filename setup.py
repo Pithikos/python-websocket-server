@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='websocket_server',
-    version='0.4',
+    version='0.4.1',
     packages=find_packages("."),
     url='https://github.com/Pithikos/python-websocket-server',
     license='MIT',
