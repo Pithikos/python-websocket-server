@@ -1,7 +1,6 @@
 # Author: Johan Hanssen Seferidis
 # License: MIT
 
-import re
 import sys
 import struct
 from base64 import b64encode
