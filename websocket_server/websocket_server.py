@@ -119,8 +119,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
     def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING):
         logger.setLevel(loglevel)
-        self.port = port
         TCPServer.__init__(self, (host, port), WebSocketHandler)
+        self.port = self.socket.getsockname()[1]
 
     def _message_received_(self, handler, msg):
         self.message_received(self.handler_to_client(handler), self, msg)
