@@ -30,6 +30,7 @@ jobs:
       - run:
           name: run tests
           command: |
+            . venv/bin/activate
             tox
 
       - store_artifacts:
