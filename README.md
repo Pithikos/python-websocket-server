@@ -22,7 +22,7 @@ You can get a feel of how to use the websocket server by running
 Then just open `client.html` in your browser and you should be able to send and receive messages.
 
 
-Using in your project
+Installation
 =======================
 
 You can use the project in three ways.
@@ -32,6 +32,14 @@ You can use the project in three ways.
   3. `pip install websocket-server` (might not be up-to-date)
 
 For coding details have a look at the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example and the [API](https://github.com/Pithikos/python-websocket-server#api).
+
+
+Testing
+=======
+
+Run all tests
+
+    tox
 
 
 API
