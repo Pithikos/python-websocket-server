@@ -292,19 +292,36 @@ class WebSocketHandler(StreamRequestHandler):
 
         self.request.send(header + payload)
 
+    def read_http_headers(self):
+        headers = {}
+        # first line should be HTTP GET
+        http_get = self.rfile.readline().decode().strip()
+        assert http_get.upper().startswith('GET')
+        # remaining should be headers
+        while True:
+            header = self.rfile.readline().decode().strip()
+            if not header:
+                break
+            head, value = header.split(':', 1)
+            headers[head.lower().strip()] = value.strip()
+        return headers
+
     def handshake(self):
-        message = self.request.recv(1024).decode().strip()
-        upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
-        if not upgrade:
+        headers = self.read_http_headers()
+
+        try:
+            assert headers['upgrade'].lower() == 'websocket'
+        except AssertionError:
             self.keep_alive = False
             return
-        key = re.search('\n[sS]ec-[wW]eb[sS]ocket-[kK]ey[\s]*:[\s]*(.*)\r\n', message)
-        if key:
-            key = key.group(1)
-        else:
+
+        try:
+            key = headers['sec-websocket-key']
+        except KeyError:
             logger.warning("Client tried to connect but was missing a key")
             self.keep_alive = False
             return
+
         response = self.make_handshake_response(key)
         self.handshake_done = self.request.send(response.encode())
         self.valid_client = True
