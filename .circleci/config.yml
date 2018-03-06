@@ -7,11 +7,16 @@ jobs:
   build:
     docker:
       - image: circleci/python:3
-    - run:
-        name: run tests
-        command: |
-          pip install tox
-          tox
-    - store_artifacts:
-        path: test-reports
-        destination: test-reports
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            pip install tox
+      - run:
+          name: run tests
+          command: |
+            tox
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
