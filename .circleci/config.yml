@@ -4,8 +4,7 @@
 #
 version: 2
 jobs:
-
-  test:
+  build:
     docker:
       - image: circleci/python:3
     - run:
