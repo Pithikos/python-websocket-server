@@ -91,7 +91,7 @@ class API():
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
-	A websocket server waiting for clients to connect.
+    A websocket server waiting for clients to connect.
 
     Args:
         port(int): Port to bind to
@@ -292,7 +292,7 @@ class WebSocketHandler(StreamRequestHandler):
             raise Exception("Message is too big. Consider breaking it into chunks.")
             return
 
-	self.text_to_send.insert(0, header + payload)
+        self.text_to_send.insert(0, header + payload)
         if not self.sendding_text: 
             self.sendding_text = True
             while len(self.text_to_send) > 0:
