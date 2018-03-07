@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from utils import session, server
 
 
@@ -66,5 +67,12 @@ def test_text_message_of_length_1500KB(session):
     client, server = session
     msg = '$'+('a'*1499991)+'1500000'+'^'
     assert len(msg) == 1500000
+    server.send_message_to_all(msg)
+    assert client.recv() == msg
+
+
+def test_text_message_with_unicode_characters(session):
+    client, server = session
+    msg = '$äüö^'
     server.send_message_to_all(msg)
     assert client.recv() == msg
