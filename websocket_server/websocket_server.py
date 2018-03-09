@@ -222,7 +222,7 @@ class WebSocketHandler(StreamRequestHandler):
         elif opcode == OPCODE_PONG:
             opcode_handler = self.server._pong_received_
         else:
-            logger.warn("Unknown opcode %#x." + opcode)
+            logger.warn("Unknown opcode %#x." % opcode)
             self.keep_alive = 0
             return
 
