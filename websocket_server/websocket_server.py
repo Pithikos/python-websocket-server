@@ -6,6 +6,8 @@ import struct
 from base64 import b64encode
 from hashlib import sha1
 import logging
+from socket import error as SocketError
+import errno
 
 if sys.version_info[0] < 3:
     from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
@@ -189,10 +191,13 @@ class WebSocketHandler(StreamRequestHandler):
     def read_next_message(self):
         try:
             b1, b2 = self.read_bytes(2)
-        except ConnectionResetError:
-            logger.info("Client closed connection.")
-            self.keep_alive = 0
-            return
+        except SocketError as e:  # to be replaced with ConnectionResetError for py3
+            if e.errno == errno.ECONNRESET:
+                logger.info("Client closed connection.")
+                print("Error: {}".format(e))
+                self.keep_alive = 0
+                return
+            b1, b2 = 0, 0
         except ValueError as e:
             b1, b2 = 0, 0
 
