@@ -191,7 +191,7 @@ class WebSocketHandler(StreamRequestHandler):
     def read_next_message(self):
         try:
             b1, b2 = self.read_bytes(2)
-        except SocketError as e:
+        except SocketError as e:  # to be replaced with ConnectionResetError for py3
             if e.errno == errno.ECONNRESET:
                 logger.info("Client closed connection.")
                 print("Error: {}".format(e))
