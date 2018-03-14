@@ -294,7 +294,7 @@ class WebSocketHandler(StreamRequestHandler):
             raise Exception("Message is too big. Consider breaking it into chunks.")
             return
 
-        if not self.request.sendall(header + payload):
+        if self.request.sendall(header + payload):
             raise RuntimeError("socket connection broken")
 
     def read_http_headers(self):
