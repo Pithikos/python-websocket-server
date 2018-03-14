@@ -92,15 +92,15 @@ class API():
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
-	A websocket server waiting for clients to connect.
+    A websocket server waiting for clients to connect.
 
     Args:
         port(int): Port to bind to
-        host(str): Hostname or IP to listen for connections. By default 127.0.0.1
-            is being used. To accept connections from any client, you should use
-            0.0.0.0.
-        loglevel: Logging level from logging module to use for logging. By default
-            warnings and errors are being logged.
+        host(str): Hostname or IP to listen for connections.
+            By default 127.0.0.1 is being used. To accept connections
+            from any client, you should use 0.0.0.0.
+        loglevel: Logging level from logging module to use for logging.
+            By default warnings and errors are being logged.
 
     Properties:
         clients(list): A list of connected clients. A client is a dictionary
@@ -185,8 +185,7 @@ class WebSocketHandler(StreamRequestHandler):
         bytes = self.rfile.read(num)
         if sys.version_info[0] < 3:
             return map(ord, bytes)
-        else:
-            return bytes
+        return bytes
 
     def read_next_message(self):
         try:
@@ -214,6 +213,7 @@ class WebSocketHandler(StreamRequestHandler):
             logger.warn("Client must always be masked.")
             self.keep_alive = 0
             return
+
         if opcode == OPCODE_CONTINUATION:
             logger.warn("Continuation frames are not supported.")
             return
@@ -257,19 +257,17 @@ class WebSocketHandler(StreamRequestHandler):
 
         # Validate message
         if isinstance(message, bytes):
-            message = try_decode_UTF8(message)  # this is slower but ensures we have UTF-8
+            # this is slower but ensures we have UTF-8
+            message = try_decode_UTF8(message)
             if not message:
-                logger.warning("Can\'t send message, message is not valid UTF-8")
+                logger.warning("Can't send message, message is not valid UTF-8")
                 return False
-        elif sys.version_info < (3,0) and (isinstance(message, str) or isinstance(message, unicode)):
-            pass
-        elif isinstance(message, str):
-            pass
-        else:
-            logger.warning('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
+
+        elif not isinstance(message, str):
+            logger.warning("Can't send message, message has to be a string or bytes. Given type is %s" % type(message))
             return False
 
-        header  = bytearray()
+        header = bytearray()
         payload = encode_to_UTF8(message)
         payload_length = len(payload)
 
@@ -291,8 +289,8 @@ class WebSocketHandler(StreamRequestHandler):
             header.extend(struct.pack(">Q", payload_length))
 
         else:
-            raise Exception("Message is too big. Consider breaking it into chunks.")
-            return
+            raise Exception(
+                "Message is too big. Consider breaking it into chunks.")
 
         self.request.send(header + payload)
 
@@ -333,12 +331,10 @@ class WebSocketHandler(StreamRequestHandler):
 
     @classmethod
     def make_handshake_response(cls, key):
-        return \
-          'HTTP/1.1 101 Switching Protocols\r\n'\
-          'Upgrade: websocket\r\n'              \
-          'Connection: Upgrade\r\n'             \
-          'Sec-WebSocket-Accept: %s\r\n'        \
-          '\r\n' % cls.calculate_response_key(key)
+        return """HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: %s""" % cls.calculate_response_key(key)
 
     @classmethod
     def calculate_response_key(cls, key):
@@ -357,9 +353,7 @@ def encode_to_UTF8(data):
     except UnicodeEncodeError as e:
         logger.error("Could not encode data to UTF-8 -- %s" % e)
         return False
-    except Exception as e:
-        raise(e)
-        return False
+
 
 
 def try_decode_UTF8(data):
@@ -367,5 +361,3 @@ def try_decode_UTF8(data):
         return data.decode('utf-8')
     except UnicodeDecodeError:
         return False
-    except Exception as e:
-        raise(e)
