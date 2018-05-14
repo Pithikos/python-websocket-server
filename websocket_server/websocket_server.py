@@ -137,6 +137,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             'id': self.id_counter,
             'handler': handler,
             'address': handler.client_address
+            'headers': handler.headers
         }
         self.clients.append(client)
         self.new_client(client, self)
@@ -168,6 +169,7 @@ class WebSocketHandler(StreamRequestHandler):
 
     def setup(self):
         StreamRequestHandler.setup(self)
+        self.headers = None
         self.keep_alive = True
         self.handshake_done = False
         self.valid_client = False
@@ -294,6 +296,7 @@ class WebSocketHandler(StreamRequestHandler):
 
     def handshake(self):
         message = self.request.recv(1024).decode().strip()
+        self.headers = message
         upgrade = re.search('\nupgrade[\s]*:[\s]*websocket', message.lower())
         if not upgrade:
             self.keep_alive = False
