@@ -109,6 +109,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                  'id'      : id,
                  'handler' : handler,
                  'address' : (addr, port)
+                 'headers' : headers
                 }
     """
 
@@ -137,7 +138,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         client = {
             'id': self.id_counter,
             'handler': handler,
-            'address': handler.client_address
+            'address': handler.client_address,
+            'headers': self.headers
         }
         self.clients.append(client)
         self.new_client(client, self)
@@ -311,16 +313,16 @@ class WebSocketHandler(StreamRequestHandler):
         return headers
 
     def handshake(self):
-        headers = self.read_http_headers()
+        self.headers = self.read_http_headers()
 
         try:
-            assert headers['upgrade'].lower() == 'websocket'
+            assert self.headers['upgrade'].lower() == 'websocket'
         except AssertionError:
             self.keep_alive = False
             return
 
         try:
-            key = headers['sec-websocket-key']
+            key = self.headers['sec-websocket-key']
         except KeyError:
             logger.warning("Client tried to connect but was missing a key")
             self.keep_alive = False
