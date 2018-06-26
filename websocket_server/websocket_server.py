@@ -118,13 +118,16 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
     clients = []
     id_counter = 0
 
-    def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING):
+    def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING, new_client_args=(), client_left_args=(), message_received_args=()):
         logger.setLevel(loglevel)
         TCPServer.__init__(self, (host, port), WebSocketHandler)
         self.port = self.socket.getsockname()[1]
+        self.new_client_args = new_client_args
+        self.client_left_args = client_left_args
+        self.message_received_args = message_received_args
 
     def _message_received_(self, handler, msg):
-        self.message_received(self.handler_to_client(handler), self, msg)
+        self.message_received(self.handler_to_client(handler), self, msg, *self.message_received_args)
 
     def _ping_received_(self, handler, msg):
         handler.send_pong(msg)
@@ -140,11 +143,11 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             'address': handler.client_address
         }
         self.clients.append(client)
-        self.new_client(client, self)
+        self.new_client(client, self, *self.new_client_args)
 
     def _client_left_(self, handler):
         client = self.handler_to_client(handler)
-        self.client_left(client, self)
+        self.client_left(client, self, *self.client_left_args)
         if client in self.clients:
             self.clients.remove(client)
 
