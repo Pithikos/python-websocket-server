@@ -4,7 +4,7 @@ setup(
     name='websocket_server',
     version='0.4',
     packages=find_packages("."),
-    url='https://github.com/Pithikos/python-websocket-server',
+    url='https://github.com/Steampunkery/python-websocket-server',
     license='MIT',
     author='Johan Hanssen Seferidis',
     author_email='manossef@gmail.com',
