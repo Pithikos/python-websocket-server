@@ -66,6 +66,9 @@ class API():
     def new_client(self, client, server):
         pass
 
+    def allow_connection(self, origin):
+        return True
+
     def client_left(self, client, server):
         pass
 
@@ -74,6 +77,9 @@ class API():
 
     def set_fn_new_client(self, fn):
         self.new_client = fn
+
+    def set_fn_allow_connection(self, fn):
+        self.allow_connection = fn
 
     def set_fn_client_left(self, fn):
         self.client_left = fn
@@ -141,6 +147,9 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         }
         self.clients.append(client)
         self.new_client(client, self)
+
+    def _allow_connection_(self, handler):
+        return self.allow_connection(handler.origin)
 
     def _client_left_(self, handler):
         client = self.handler_to_client(handler)
@@ -326,6 +335,13 @@ class WebSocketHandler(StreamRequestHandler):
             self.keep_alive = False
             return
 
+        self.origin = headers.get('origin')
+        if not self.server._allow_connection_(self):
+            response = self.make_handshake_abort_response()
+            self.request.send(response.encode())
+            self.keep_alive = False
+            return
+
         response = self.make_handshake_response(key)
         self.handshake_done = self.request.send(response.encode())
         self.valid_client = True
@@ -346,6 +362,10 @@ class WebSocketHandler(StreamRequestHandler):
         hash = sha1(key.encode() + GUID.encode())
         response_key = b64encode(hash.digest()).strip()
         return response_key.decode('ASCII')
+
+    @staticmethod
+    def make_handshake_abort_response():
+        return 'HTTP/1.1 403 Forbidden\r\n\r\n'
 
     def finish(self):
         self.server._client_left_(self)
