@@ -84,9 +84,9 @@ class API():
     def send_message(self, client, msg):
         self._unicast_(client, msg)
 
-    def send_message_to_all(self, msg):
-        self._multicast_(msg)
-
+    @classmethod
+    def send_message_to_all(cls, msg):
+        cls._multicast_(msg)
 
 # ------------------------- Implementation -----------------------------
 
@@ -108,20 +108,33 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 {
                  'id'      : id,
                  'handler' : handler,
-                 'address' : (addr, port)
+                 'address' : (addr, port),
+		 'server'  : websocket instance
                 }
     """
 
     allow_reuse_address = True
     daemon_threads = True  # comment to keep threads alive until finished
 
-    clients = []
+    __clients = []
     id_counter = 0
 
     def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING):
+        self.send_message_to_all = self.__send_message_to_all
         logger.setLevel(loglevel)
         TCPServer.__init__(self, (host, port), WebSocketHandler)
         self.port = self.socket.getsockname()[1]
+
+    @property
+    def clients(self):
+        return list(
+            client for client in self.__clients
+            if client['server'] == self
+        )
+
+    def __send_message_to_all(self, msg):
+        for client in self.clients:
+            self._unicast_(client, msg)
 
     def _message_received_(self, handler, msg):
         self.message_received(self.handler_to_client(handler), self, msg)
@@ -137,26 +150,29 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         client = {
             'id': self.id_counter,
             'handler': handler,
-            'address': handler.client_address
+            'address': handler.client_address,
+            'server': self
         }
-        self.clients.append(client)
+        self.__clients.append(client)
         self.new_client(client, self)
 
     def _client_left_(self, handler):
         client = self.handler_to_client(handler)
         self.client_left(client, self)
-        if client in self.clients:
-            self.clients.remove(client)
+        if client in self.__clients:
+            self.__clients.remove(client)
 
-    def _unicast_(self, to_client, msg):
+    @staticmethod
+    def _unicast_(to_client, msg):
         to_client['handler'].send_message(msg)
 
-    def _multicast_(self, msg):
-        for client in self.clients:
-            self._unicast_(client, msg)
+    @classmethod
+    def _multicast_(cls, msg):
+        for client in cls.__clients:
+            cls._unicast_(client, msg)
 
     def handler_to_client(self, handler):
-        for client in self.clients:
+        for client in self.__clients:
             if client['handler'] == handler:
                 return client
 
