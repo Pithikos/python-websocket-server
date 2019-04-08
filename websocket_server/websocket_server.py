@@ -124,10 +124,10 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.port = self.socket.getsockname()[1]
 
     def _message_received_(self, handler, msg):
-        self.message_received(self.handler_to_client(handler), self, msg.decode())
+        self.message_received(self.handler_to_client(handler), self, msg)
 
     def _ping_received_(self, handler, msg):
-        handler.send_pong(msg.decode())
+        handler.send_pong(msg)
 
     def _pong_received_(self, handler, msg):
         pass
@@ -233,11 +233,11 @@ class WebSocketHandler(StreamRequestHandler):
 
         if fin and opcode != OPCODE_CONTINUATION: # simple msg
             if opcode == OPCODE_PING:
-                self.server._ping_received_(self, payload)
+                self.server._ping_received_(self, payload.decode('utf8'))
             elif opcode == OPCODE_PONG:
-                self.server._pong_received_(self, payload)
+                self.server._pong_received_(self, payload.decode('utf8'))
             elif opcode == OPCODE_TEXT:
-                self.server._message_received_(self, payload)
+                self.server._message_received_(self, payload.decode('utf8'))
             return
 
         if not fin and opcode: # fragment msg start
@@ -252,7 +252,7 @@ class WebSocketHandler(StreamRequestHandler):
         
         if fin and opcode == OPCODE_CONTINUATION: # fragment msg end
             if self.fragment_opcode == OPCODE_TEXT:
-                self.server._message_received_(self, self.fragment_payload_buf + payload)
+                self.server._message_received_(self, (self.fragment_payload_buf + payload).decode('utf8'))
             elif self.fragment_opcode == OPCODE_BINARY:
                 pass
             return
