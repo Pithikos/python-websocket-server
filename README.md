@@ -11,7 +11,7 @@ A minimal Websockets Server in Python with no external dependencies.
   * No dependencies
 
 Notice that this implementation does not support the more advanced features
-like SSL etc. The project is focused mainly on making it easy to run a
+like multithreading etc. The project is focused mainly on making it easy to run a
 websocket server for prototyping, testing or for making a GUI for your application.
 
 
