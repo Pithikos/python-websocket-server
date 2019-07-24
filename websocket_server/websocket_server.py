@@ -113,8 +113,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 }
     """
 
-	key = None
-	cert = None
+    key = None
+    cert = None
 
     allow_reuse_address = True
     daemon_threads = True  # comment to keep threads alive until finished
@@ -127,8 +127,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         TCPServer.__init__(self, (host, port), WebSocketHandler)
         self.port = self.socket.getsockname()[1]
 		
-		self.key = key
-		self.cert = cert
+        self.key = key
+        self.cert = cert
 
     def _message_received_(self, handler, msg):
         self.message_received(self.handler_to_client(handler), self, msg)
@@ -172,11 +172,11 @@ class WebSocketHandler(StreamRequestHandler):
 
     def __init__(self, socket, addr, server):
         self.server = server
-		if server.key and server.cert:
-			try:
-				socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
-			except: # Not sure which exception it throws if the key/cert isn't found
-				logger.warn("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
+        if server.key and server.cert:
+            try:
+                socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
+            except: # Not sure which exception it throws if the key/cert isn't found
+                logger.warn("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
         StreamRequestHandler.__init__(self, socket, addr, server)
 
     def setup(self):
