@@ -26,6 +26,10 @@ jobs:
       - checkout
       - python/load-cache
       - run:
+          name: install twine
+          command: |
+            sudo pip install twine
+      - run:
           name: verify git tag vs. version
           command: |
             python setup.py verify
