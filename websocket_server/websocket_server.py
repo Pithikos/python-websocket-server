@@ -10,10 +10,7 @@ import logging
 from socket import error as SocketError
 import errno
 
-if sys.version_info[0] < 3:
-    from SocketServer import ThreadingMixIn, TCPServer, StreamRequestHandler
-else:
-    from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
+from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
 
 logger = logging.getLogger(__name__)
 logging.basicConfig()
@@ -113,14 +110,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 }
     """
 
-    key = None
-    cert = None
-
     allow_reuse_address = True
     daemon_threads = True  # comment to keep threads alive until finished
-
-    clients = []
-    id_counter = 0
 
     def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING, key=None, cert=None):
         logger.setLevel(loglevel)
@@ -129,6 +120,9 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 		
         self.key = key
         self.cert = cert
+
+        self.clients = []
+        self.id_counter = 0
 
     def _message_received_(self, handler, msg):
         self.message_received(self.handler_to_client(handler), self, msg)
@@ -193,12 +187,7 @@ class WebSocketHandler(StreamRequestHandler):
                 self.read_next_message()
 
     def read_bytes(self, num):
-        # python3 gives ordinal of byte directly
-        bytes = self.rfile.read(num)
-        if sys.version_info[0] < 3:
-            return map(ord, bytes)
-        else:
-            return bytes
+        return self.rfile.read(num)
 
     def read_next_message(self):
         try:
@@ -272,12 +261,8 @@ class WebSocketHandler(StreamRequestHandler):
             if not message:
                 logger.warning("Can\'t send message, message is not valid UTF-8")
                 return False
-        elif sys.version_info < (3,0) and (isinstance(message, str) or isinstance(message, unicode)):
-            pass
-        elif isinstance(message, str):
-            pass
-        else:
-            logger.warning('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
+        elif not isinstance(message, str):
+            logger.warning('Can\'t send message, message has to be a string or bytes. Got %s' % type(message))
             return False
 
         header  = bytearray()
