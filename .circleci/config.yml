@@ -1,10 +1,10 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
-version: 2
+version: 2.1
+
+orbs:
+  python: circleci/python@0.2.1
+
 jobs:
-  build:
+  test:
     docker:
       - image: circleci/python:3
     steps:
@@ -16,7 +16,53 @@ jobs:
       - run:
           name: run tests
           command: |
-            tox
+            tox -e py37
       - store_artifacts:
           path: test-reports
           destination: test-reports
+  deploy:
+    executor: python/default
+    steps:
+      - checkout
+      - python/load-cache
+      - run:
+          name: verify git tag vs. version
+          command: |
+            python setup.py verify
+      - run:
+          name: create packages
+          command: |
+            python setup.py sdist
+            python setup.py bdist_wheel
+      - run:
+          name: setup pypi credentials
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: upload to cheeseshop if a tag found
+          command: |
+            tag=`git tag --points-at HEAD`
+            if [ $tag ]; then
+              python -m twine upload dist/*
+            fi
+
+workflows:
+  test:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: development
+  new_release:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+      - deploy:
+          requires:
+            - test
