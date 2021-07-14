@@ -11,7 +11,7 @@ A minimal Websockets Server in Python with no external dependencies.
   * No dependencies
 
 Notice that this implementation does not support the more advanced features
-like SSL etc. The project is focused mainly on making it easy to run a
+like multithreading etc. The project is focused mainly on making it easy to run a
 websocket server for prototyping, testing or for making a GUI for your application.
 
 
@@ -59,6 +59,10 @@ The WebsocketServer can be initialized with the below parameters.
 
 *`loglevel`* - logging level to print. By default WARNING is used. You can use `logging.DEBUG` or `logging.INFO` for more verbose output.
 
+*`key`* - If using SSL, this is the path to the key.  
+
+*`cert`* - If using SSL, this is the path to the certificate. 
+
 
 ### Properties
 
@@ -101,7 +105,19 @@ def new_client(client, server):
 server = WebsocketServer(13254, host='127.0.0.1', loglevel=logging.INFO)
 server.set_fn_new_client(new_client)
 server.run_forever()
-````
+````  
+Example (SSL):  
+````py
+import logging
+from websocket_server import WebsocketServer
+
+def new_client(client, server):
+	server.send_message_to_all("Hey all, a new client has joined us")
+
+server = WebsocketServer(13254, host='127.0.0.1', loglevel=logging.INFO, key="key.pem", cert="cert.pem")
+server.set_fn_new_client(new_client)
+server.run_forever()
+````  
 
 ## Client
 
