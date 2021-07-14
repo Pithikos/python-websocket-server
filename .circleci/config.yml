@@ -12,6 +12,9 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            sudo apt-get install python3.5
+            sudo apt-get install python3.6
+            sudo apt-get install python3.7
             sudo pip install tox
       - run:
           name: run tests
