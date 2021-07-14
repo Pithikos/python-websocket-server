@@ -5,10 +5,10 @@ import subprocess
 import shlex
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
     from setuptools.command.install import install
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, find_packages
     from distutils.command.install import install
 
 
