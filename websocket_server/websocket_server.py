@@ -45,8 +45,6 @@ OPCODE_PING         = 0x9
 OPCODE_PONG         = 0xA
 
 
-# -------------------------------- API ---------------------------------
-
 class API():
 
     def run_forever(self):
@@ -84,8 +82,6 @@ class API():
     def send_message_to_all(self, msg):
         self._multicast_(msg)
 
-
-# ------------------------- Implementation -----------------------------
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
