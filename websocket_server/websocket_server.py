@@ -145,8 +145,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         if client in self.clients:
             self.clients.remove(client)
 
-    def _unicast(self, to_client, msg):
-        to_client['handler'].send_message(msg)
+    def _unicast(self, receiver_client, msg):
+        receiver_client['handler'].send_message(msg)
 
     def _multicast(self, msg):
         for client in self.clients:
