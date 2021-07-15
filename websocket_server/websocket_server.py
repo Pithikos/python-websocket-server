@@ -3,6 +3,7 @@
 
 import sys
 import struct
+import ssl
 from base64 import b64encode
 from hashlib import sha1
 import logging
@@ -108,10 +109,13 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
     allow_reuse_address = True
     daemon_threads = True  # comment to keep threads alive until finished
 
-    def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING):
+    def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING, key=None, cert=None):
         logger.setLevel(loglevel)
         TCPServer.__init__(self, (host, port), WebSocketHandler)
         self.port = self.socket.getsockname()[1]
+		
+        self.key = key
+        self.cert = cert
 
         self.clients = []
         self.id_counter = 0
@@ -158,6 +162,11 @@ class WebSocketHandler(StreamRequestHandler):
 
     def __init__(self, socket, addr, server):
         self.server = server
+        if server.key and server.cert:
+            try:
+                socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
+            except: # Not sure which exception it throws if the key/cert isn't found
+                logger.warn("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
         StreamRequestHandler.__init__(self, socket, addr, server)
 
     def setup(self):
