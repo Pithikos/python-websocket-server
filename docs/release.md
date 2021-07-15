@@ -7,6 +7,7 @@ from development comes with a tag.
 General flow
 
   1. Update VERSION in setup.py from development branch and commit
-  2. Merge development into master (`git merge --no-ff development`)
-  3. Add corresponding version as a new tag (`git tag <new_version>`) e.g. git tag v0.3.0
-  4. Push everything (`git push --tags && git push`)
+  2. Update releases.txt
+  3. Merge development into master (`git merge --no-ff development`)
+  4. Add corresponding version as a new tag (`git tag <new_version>`) e.g. git tag v0.3.0
+  5. Push everything (`git push --tags && git push`)
