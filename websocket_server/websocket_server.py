@@ -77,10 +77,10 @@ class API():
         self.message_received = fn
 
     def send_message(self, client, msg):
-        self._unicast_(client, msg)
+        self._unicast(client, msg)
 
     def send_message_to_all(self, msg):
-        self._multicast_(msg)
+        self._multicast(msg)
 
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
@@ -141,12 +141,12 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         if client in self.clients:
             self.clients.remove(client)
 
-    def _unicast_(self, to_client, msg):
+    def _unicast(self, to_client, msg):
         to_client['handler'].send_message(msg)
 
-    def _multicast_(self, msg):
+    def _multicast(self, msg):
         for client in self.clients:
-            self._unicast_(client, msg)
+            self._unicast(client, msg)
 
     def handler_to_client(self, handler):
         for client in self.clients:
