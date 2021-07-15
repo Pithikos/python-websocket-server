@@ -18,11 +18,9 @@ websocket server for prototyping, testing or for making a GUI for your applicati
 Installation
 =======================
 
-You can use the project in three ways.
+Install with pip
 
-  1. Copy/paste the *websocket_server.py* file in your project and use it directly
-  2. `pip install git+https://github.com/Pithikos/python-websocket-server` (latest code)
-  3. `pip install websocket-server` (might not be up-to-date)
+    pip install websocket-server
 
 For coding details have a look at the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example and the [API](https://github.com/Pithikos/python-websocket-server#api).
 
