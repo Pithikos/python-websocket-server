@@ -113,7 +113,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         logger.setLevel(loglevel)
         TCPServer.__init__(self, (host, port), WebSocketHandler)
         self.port = self.socket.getsockname()[1]
-		
+
         self.key = key
         self.cert = cert
 
