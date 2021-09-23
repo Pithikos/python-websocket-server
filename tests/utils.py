@@ -1,11 +1,40 @@
 import logging
+from time import sleep
 from threading import Thread
 
 import pytest
-from websocket import create_connection  # websocket-client
+import websocket # websocket-client
 
 import _bootstrap_
 from websocket_server import WebsocketServer
+
+
+class TestClient():
+    def __init__(self, port, threaded=True):
+        websocket.enableTrace(True)
+        self.ws = websocket.WebSocketApp(f"ws://localhost:{port}/",
+                                  on_open=self.on_open,
+                                  on_message=self.on_message,
+                                  on_error=self.on_error,
+                                  on_close=self.on_close)
+        if threaded:
+            self.thread = Thread(target=self.ws.run_forever)
+            self.thread.daemon = True
+            self.thread.start()
+        else:
+            self.ws.run_forever()
+
+    def on_message(self, ws, message):
+        print(f"Client: on_message: {message}")
+
+    def on_error(self, ws, error):
+        print(f"Client: on_error: {error}")
+
+    def on_close(self, ws, close_status_code, close_msg):
+        print("Client: on_close")
+
+    def on_open(self, ws):
+        print("Client: on_open")
 
 
 @pytest.fixture(scope='function')
@@ -21,6 +50,21 @@ def server():
 
 @pytest.fixture
 def session(server):
-    ws = create_connection("ws://{}:{}".format(*server.server_address))
-    yield ws, server
-    ws.close()
+    """
+    Gives a simple connection to a server
+    """
+    conn = websocket.create_connection("ws://{}:{}".format(*server.server_address))
+    yield conn, server
+    client.ws.close()
+
+
+@pytest.fixture
+def client_session(server):
+    """
+    Gives a TestClient instance connected to a server
+    """
+    client = TestClient(port=server.port)
+    sleep(1)
+    assert client.ws.sock and client.ws.sock.connected
+    yield client, server
+    client.ws.close()
