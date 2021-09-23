@@ -45,6 +45,9 @@ OPCODE_CLOSE_CONN   = 0x8
 OPCODE_PING         = 0x9
 OPCODE_PONG         = 0xA
 
+CLOSE_STATUS_NORMAL = 1000
+DEFAULT_CLOSE_REASON = bytes('', encoding='utf-8')
+
 
 class API():
 
@@ -244,6 +247,18 @@ class WebSocketHandler(StreamRequestHandler):
 
     def send_pong(self, message):
         self.send_text(message, OPCODE_PONG)
+
+    def send_close(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        """
+        Send CLOSE to client
+
+        Args:
+            status: Status as defined in https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1
+            reason: Text with reason of closing the connection
+        """
+        if status < CLOSE_STATUS_NORMAL or status > 1015:
+            raise Exception(f"CLOSE status must be between 1000 and 1015, got {status}")
+        self.request.send(struct.pack('!H', status) + reason, OPCODE_CLOSE_CONN)
 
     def send_text(self, message, opcode=OPCODE_TEXT):
         """
