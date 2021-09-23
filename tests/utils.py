@@ -11,6 +11,7 @@ from websocket_server import WebsocketServer
 
 class TestClient():
     def __init__(self, port, threaded=True):
+        self.received_messages = []
         websocket.enableTrace(True)
         self.ws = websocket.WebSocketApp(f"ws://localhost:{port}/",
                                   on_open=self.on_open,
@@ -25,6 +26,7 @@ class TestClient():
             self.ws.run_forever()
 
     def on_message(self, ws, message):
+        self.received_messages.append(message)
         print(f"Client: on_message: {message}")
 
     def on_error(self, ws, error):
