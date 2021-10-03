@@ -59,7 +59,7 @@ The WebsocketServer can be initialized with the below parameters.
 
 *`key`* - If using SSL, this is the path to the key.  
 
-*`cert`* - If using SSL, this is the path to the certificate. 
+*`cert`* - If using SSL, this is the path to the certificate.
 
 
 ### Properties
@@ -78,6 +78,9 @@ The WebsocketServer can be initialized with the below parameters.
 | `set_fn_message_received()` | Sets a callback function that will be called when a `client` sends a message          | function        | None  |
 | `send_message()`            | Sends a `message` to a specific `client`. The message is a simple string.             | client, message | None  |
 | `send_message_to_all()`     | Sends a `message` to **all** connected clients. The message is a simple string.       | message         | None  |
+| `shutdown_gracefully()`     | Shutdown server by sending a websocket CLOSE handshake to all connected clients.      | None            | None  |
+| `shutdown_abruptly()`       | Shutdown server without sending any websocket CLOSE handshake.                        | None            | None  |
+
 
 
 ### Callback functions
