@@ -39,7 +39,7 @@ Testing
 
 Run all tests
 
-    tox
+    pytest
 
 
 API
