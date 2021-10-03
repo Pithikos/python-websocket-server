@@ -86,35 +86,11 @@ class API():
     def send_message_to_all(self, msg):
         self._multicast(msg)
 
-    def _terminate_client_handlers(self):
-        """
-        Ensures request handler for each client is terminated correctly
-        """
-        for client in self.clients:
-            client["handler"].keep_alive = False
-            client["handler"].finish()
-            client["handler"].connection.close()
-
     def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
-        """
-        Send a CLOSE handshake to all connected clients before terminating server
-        """
-        self.keep_alive = False
-
-        # Send CLOSE to clients
-        for client in self.clients:
-            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
-
-        self._terminate_client_handlers()
-        self.server_close()
+        self._shutdown_gracefully(status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON)
 
     def shutdown_abruptly(self):
-        """
-        Terminate server without sending a CLOSE handshake
-        """
-        self.keep_alive = False
-        self._terminate_client_handlers()
-        self.server_close()
+        self._shutdown_abruptly()
 
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
@@ -189,6 +165,36 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         for client in self.clients:
             if client['handler'] == handler:
                 return client
+
+    def _terminate_client_handlers(self):
+        """
+        Ensures request handler for each client is terminated correctly
+        """
+        for client in self.clients:
+            client["handler"].keep_alive = False
+            client["handler"].finish()
+            client["handler"].connection.close()
+
+    def _shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        """
+        Send a CLOSE handshake to all connected clients before terminating server
+        """
+        self.keep_alive = False
+
+        # Send CLOSE to clients
+        for client in self.clients:
+            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
+
+        self._terminate_client_handlers()
+        self.server_close()
+
+    def _shutdown_abruptly(self):
+        """
+        Terminate server without sending a CLOSE handshake
+        """
+        self.keep_alive = False
+        self._terminate_client_handlers()
+        self.server_close()
 
 
 class WebSocketHandler(StreamRequestHandler):
