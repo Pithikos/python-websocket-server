@@ -57,7 +57,7 @@ def session(server):
     """
     conn = websocket.create_connection("ws://{}:{}".format(*server.server_address))
     yield conn, server
-    client.ws.close()
+    conn.close()
 
 
 @pytest.fixture
