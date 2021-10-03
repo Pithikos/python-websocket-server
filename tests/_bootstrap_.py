@@ -2,5 +2,5 @@
 import sys, os
 if os.getcwd().endswith('tests'):
 	sys.path.insert(0, '..')
-elif os.getcwd().endswith('websocket-server'):
+elif os.path.exists('websocket_server'):
 	sys.path.insert(0, '.')
