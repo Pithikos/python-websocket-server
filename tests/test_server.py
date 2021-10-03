@@ -1,6 +1,7 @@
 from utils import session, client_session, server
 from time import sleep
 
+import websocket
 import pytest
 
 
@@ -35,6 +36,36 @@ def test_shutdown_gracefully(client_session):
     assert not client.ws.sock
     assert server.socket.fileno() == -1
     assert not server.clients
+
+
+def test_shutdown_abruptly(client_session):
+    client, server = client_session
+    assert client.ws.sock and client.ws.sock.connected
+    assert server.socket.fileno() > 0
+
+    server.shutdown_abruptly()
+    sleep(0.5)
+
+    # Ensure server socket died
+    assert server.socket.fileno() == -1
+
+    # Ensure client handler terminated
+    assert server.received_messages == []
+    assert client.errors == []
+    client.ws.send("1st msg after server shutdown")
+    sleep(0.5)
+
+    # Note the message is received since the client handler
+    # will terminate only once it has received the last message
+    # and break out of the keep_alive loop. Any consecutive messages
+    # will not be received though.
+    assert server.received_messages == ["1st msg after server shutdown"]
+    assert len(client.errors) == 1
+    assert isinstance(client.errors[0], websocket._exceptions.WebSocketConnectionClosedException)
+
+    # Try to send 2nd message
+    with pytest.raises(websocket._exceptions.WebSocketConnectionClosedException):
+        client.ws.send("2nd msg after server shutdown")
 
 
 def test_client_closes_gracefully(session):

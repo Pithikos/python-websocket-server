@@ -86,16 +86,34 @@ class API():
     def send_message_to_all(self, msg):
         self._multicast(msg)
 
+    def _terminate_client_handlers(self):
+        """
+        Ensures request handler for each client is terminated correctly
+        """
+        for client in self.clients:
+            client["handler"].keep_alive = False
+            client["handler"].finish()
+            client["handler"].connection.close()
+
     def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
         """
-        Close with a websocket handshake
-
-        1. Send CLOSE to all clients
-        2. Close TCP
+        Send a CLOSE handshake to all connected clients before terminating server
         """
         self.keep_alive = False
+
+        # Send CLOSE to clients
         for client in self.clients:
             client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
+
+        self._terminate_client_handlers()
+        self.server_close()
+
+    def shutdown_abruptly(self):
+        """
+        Terminate server without sending a CLOSE handshake
+        """
+        self.keep_alive = False
+        self._terminate_client_handlers()
         self.server_close()
 
 
