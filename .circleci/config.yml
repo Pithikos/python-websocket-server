@@ -49,6 +49,7 @@ jobs:
           command: |
             tag=`git tag --points-at HEAD`
             if [ $tag ]; then
+              echo Uploading
               python -m twine upload dist/*
             fi
 
