@@ -39,10 +39,20 @@ class TestClient():
         print("TestClient: on_open")
 
 
+class TestServer(WebsocketServer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.received_messages = []
+        self.set_fn_message_received(self.handle_received_message)
+
+    def handle_received_message(self, client, server, message):
+        self.received_messages.append(message)
+
+
 @pytest.fixture(scope='function')
 def server():
     """ Returns the response of a server after"""
-    s = WebsocketServer(0, loglevel=logging.DEBUG)
+    s = TestServer(0, loglevel=logging.DEBUG)
     server_thread = Thread(target=s.run_forever)
     server_thread.daemon = True
     server_thread.start()
