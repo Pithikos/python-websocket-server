@@ -1,7 +1,7 @@
 Websocket Server
 =======================
 
-[![CircleCI](https://circleci.com/gh/Pithikos/python-websocket-server/tree/master.svg?style=svg)](https://circleci.com/gh/Pithikos/python-websocket-server/tree/master)
+[![CircleCI](https://circleci.com/gh/Pithikos/python-websocket-server/tree/master.svg?style=svg)](https://circleci.com/gh/Pithikos/python-websocket-server/tree/master) [![PyPI version](https://badge.fury.io/py/websocket-server.svg)](https://badge.fury.io/py/websocket-server)
 
 A minimal Websockets Server in Python with no external dependencies.
 
@@ -18,11 +18,9 @@ websocket server for prototyping, testing or for making a GUI for your applicati
 Installation
 =======================
 
-You can use the project in three ways.
+Install with pip
 
-  1. Copy/paste the *websocket_server.py* file in your project and use it directly
-  2. `pip install git+https://github.com/Pithikos/python-websocket-server` (latest code)
-  3. `pip install websocket-server` (might not be up-to-date)
+    pip install websocket-server
 
 For coding details have a look at the [*server.py*](https://github.com/Pithikos/python-websocket-server/blob/master/server.py) example and the [API](https://github.com/Pithikos/python-websocket-server#api).
 
@@ -61,7 +59,7 @@ The WebsocketServer can be initialized with the below parameters.
 
 *`key`* - If using SSL, this is the path to the key.  
 
-*`cert`* - If using SSL, this is the path to the certificate. 
+*`cert`* - If using SSL, this is the path to the certificate.
 
 
 ### Properties
@@ -80,6 +78,9 @@ The WebsocketServer can be initialized with the below parameters.
 | `set_fn_message_received()` | Sets a callback function that will be called when a `client` sends a message          | function        | None  |
 | `send_message()`            | Sends a `message` to a specific `client`. The message is a simple string.             | client, message | None  |
 | `send_message_to_all()`     | Sends a `message` to **all** connected clients. The message is a simple string.       | message         | None  |
+| `shutdown_gracefully()`     | Shutdown server by sending a websocket CLOSE handshake to all connected clients.      | None            | None  |
+| `shutdown_abruptly()`       | Shutdown server without sending any websocket CLOSE handshake.                        | None            | None  |
+
 
 
 ### Callback functions

@@ -2,5 +2,5 @@
 tox>=3.24.0
 IPython
 pytest
-websocket-client
+websocket-client>=1.1.1
 twine

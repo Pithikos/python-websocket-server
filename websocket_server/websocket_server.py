@@ -45,8 +45,9 @@ OPCODE_CLOSE_CONN   = 0x8
 OPCODE_PING         = 0x9
 OPCODE_PONG         = 0xA
 
+CLOSE_STATUS_NORMAL = 1000
+DEFAULT_CLOSE_REASON = bytes('', encoding='utf-8')
 
-# -------------------------------- API ---------------------------------
 
 class API():
 
@@ -80,13 +81,17 @@ class API():
         self.message_received = fn
 
     def send_message(self, client, msg):
-        self._unicast_(client, msg)
+        self._unicast(client, msg)
 
     def send_message_to_all(self, msg):
-        self._multicast_(msg)
+        self._multicast(msg)
 
+    def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        self._shutdown_gracefully(status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON)
 
-# ------------------------- Implementation -----------------------------
+    def shutdown_abruptly(self):
+        self._shutdown_abruptly()
+
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
@@ -117,7 +122,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         logger.setLevel(loglevel)
         TCPServer.__init__(self, (host, port), WebSocketHandler)
         self.port = self.socket.getsockname()[1]
-		
+
         self.key = key
         self.cert = cert
 
@@ -149,17 +154,47 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         if client in self.clients:
             self.clients.remove(client)
 
-    def _unicast_(self, to_client, msg):
-        to_client['handler'].send_message(msg)
+    def _unicast(self, receiver_client, msg):
+        receiver_client['handler'].send_message(msg)
 
-    def _multicast_(self, msg):
+    def _multicast(self, msg):
         for client in self.clients:
-            self._unicast_(client, msg)
+            self._unicast(client, msg)
 
     def handler_to_client(self, handler):
         for client in self.clients:
             if client['handler'] == handler:
                 return client
+
+    def _terminate_client_handlers(self):
+        """
+        Ensures request handler for each client is terminated correctly
+        """
+        for client in self.clients:
+            client["handler"].keep_alive = False
+            client["handler"].finish()
+            client["handler"].connection.close()
+
+    def _shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        """
+        Send a CLOSE handshake to all connected clients before terminating server
+        """
+        self.keep_alive = False
+
+        # Send CLOSE to clients
+        for client in self.clients:
+            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
+
+        self._terminate_client_handlers()
+        self.server_close()
+
+    def _shutdown_abruptly(self):
+        """
+        Terminate server without sending a CLOSE handshake
+        """
+        self.keep_alive = False
+        self._terminate_client_handlers()
+        self.server_close()
 
 
 class WebSocketHandler(StreamRequestHandler):
@@ -248,6 +283,27 @@ class WebSocketHandler(StreamRequestHandler):
 
     def send_pong(self, message):
         self.send_text(message, OPCODE_PONG)
+
+    def send_close(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        """
+        Send CLOSE to client
+
+        Args:
+            status: Status as defined in https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1
+            reason: Text with reason of closing the connection
+        """
+        if status < CLOSE_STATUS_NORMAL or status > 1015:
+            raise Exception(f"CLOSE status must be between 1000 and 1015, got {status}")
+
+        header = bytearray()
+        payload = struct.pack('!H', status) + reason
+        payload_length = len(payload)
+        assert payload_length <= 125, "We only support short closing reasons at the moment"
+
+        # Send CLOSE with status & reason
+        header.append(FIN | OPCODE_CLOSE_CONN)
+        header.append(payload_length)
+        self.request.send(header + payload)
 
     def send_text(self, message, opcode=OPCODE_TEXT):
         """
