@@ -12,6 +12,10 @@ from websocket_server import WebsocketServer
 class TestClient():
     def __init__(self, port, threaded=True):
         self.received_messages = []
+        self.closes = []
+        self.opens = []
+        self.errors = []
+
         websocket.enableTrace(True)
         self.ws = websocket.WebSocketApp(f"ws://localhost:{port}/",
                                   on_open=self.on_open,
@@ -30,12 +34,15 @@ class TestClient():
         print(f"TestClient: on_message: {message}")
 
     def on_error(self, ws, error):
+        self.errors.append(error)
         print(f"TestClient: on_error: {error}")
 
     def on_close(self, ws, close_status_code, close_msg):
+        self.closes.append((close_status_code, close_msg))
         print(f"TestClient: on_close: {close_status_code} - {close_msg}")
 
     def on_open(self, ws):
+        self.opens.append(ws)
         print("TestClient: on_open")
 
 
