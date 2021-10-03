@@ -27,16 +27,16 @@ class TestClient():
 
     def on_message(self, ws, message):
         self.received_messages.append(message)
-        print(f"Client: on_message: {message}")
+        print(f"TestClient: on_message: {message}")
 
     def on_error(self, ws, error):
-        print(f"Client: on_error: {error}")
+        print(f"TestClient: on_error: {error}")
 
     def on_close(self, ws, close_status_code, close_msg):
-        print("Client: on_close")
+        print(f"TestClient: on_close: {close_status_code} - {close_msg}")
 
     def on_open(self, ws):
-        print("Client: on_open")
+        print("TestClient: on_open")
 
 
 @pytest.fixture(scope='function')
