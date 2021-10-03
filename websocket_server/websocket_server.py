@@ -86,6 +86,18 @@ class API():
     def send_message_to_all(self, msg):
         self._multicast(msg)
 
+    def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        """
+        Close with a websocket handshake
+
+        1. Send CLOSE to all clients
+        2. Close TCP
+        """
+        self.keep_alive = False
+        for client in self.clients:
+            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
+        self.server_close()
+
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
@@ -258,7 +270,16 @@ class WebSocketHandler(StreamRequestHandler):
         """
         if status < CLOSE_STATUS_NORMAL or status > 1015:
             raise Exception(f"CLOSE status must be between 1000 and 1015, got {status}")
-        self.request.send(struct.pack('!H', status) + reason, OPCODE_CLOSE_CONN)
+
+        header = bytearray()
+        payload = struct.pack('!H', status) + reason
+        payload_length = len(payload)
+        assert payload_length <= 125, "We only support short closing reasons at the moment"
+
+        # Send CLOSE with status & reason
+        header.append(FIN | OPCODE_CLOSE_CONN)
+        header.append(payload_length)
+        self.request.send(header + payload)
 
     def send_text(self, message, opcode=OPCODE_TEXT):
         """

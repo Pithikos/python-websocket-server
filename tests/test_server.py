@@ -5,7 +5,9 @@ import pytest
 
 
 def test_send_close(client_session):
-    "Ensure client stops receiving data once we send_close (socket is still open)"
+    """
+    Ensure client stops receiving data once we send_close (socket is still open)
+    """
     client, server = client_session
     assert client.received_messages == []
 
@@ -19,6 +21,20 @@ def test_send_close(client_session):
     server.send_message_to_all("test2")
     sleep(0.5)
     assert client.received_messages == ["test1"]
+
+
+def test_shutdown_gracefully(client_session):
+    client, server = client_session
+    assert client.ws.sock and client.ws.sock.connected
+    assert server.socket.fileno() > 0
+
+    server.shutdown_gracefully()
+    sleep(0.5)
+
+    # Ensure all parties disconnected
+    assert not client.ws.sock
+    assert server.socket.fileno() == -1
+    assert not server.clients
 
 
 def test_client_closes_gracefully(session):
