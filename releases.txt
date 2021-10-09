@@ -4,3 +4,6 @@
 0.5.1
 - SSL support
 - Drop Python 2 support
+
+0.5.4
+- Add API for shutting down server (abruptly & gracefully)

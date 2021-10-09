@@ -10,13 +10,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install dependencies
-          command: |
-            sudo pip install tox
-      - run:
           name: run tests
           command: |
-            tox -e py37
+            pytest
       - store_artifacts:
           path: test-reports
           destination: test-reports

@@ -73,6 +73,7 @@ The WebsocketServer can be initialized with the below parameters.
 
 | Method                      | Description                                                                           | Takes           | Gives |
 |-----------------------------|---------------------------------------------------------------------------------------|-----------------|-------|
+| `run_forever()`       | Runs server until shutdown_gracefully or shutdown_abruptly are called.  | threaded: run server on its own thread if True        | None  |
 | `set_fn_new_client()`       | Sets a callback function that will be called for every new `client` connecting to us  | function        | None  |
 | `set_fn_client_left()`      | Sets a callback function that will be called for every `client` disconnecting from us | function        | None  |
 | `set_fn_message_received()` | Sets a callback function that will be called when a `client` sends a message          | function        | None  |
