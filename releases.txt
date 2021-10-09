@@ -7,3 +7,7 @@
 
 0.5.4
 - Add API for shutting down server (abruptly & gracefully)
+
+0.5.5
+- Allow running run_forever threaded
+- Fix shutting down of a server without connected clients
