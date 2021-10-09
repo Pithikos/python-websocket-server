@@ -53,4 +53,5 @@ setup(
     cmdclass={
         'verify': VerifyVersionCommand,
     },
+    python_requires=">=3.6",
 )
