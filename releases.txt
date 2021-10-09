@@ -11,3 +11,6 @@
 0.5.5
 - Allow running run_forever threaded
 - Fix shutting down of a server without connected clients
+
+0.5.6
+- Support from Python3.6+
