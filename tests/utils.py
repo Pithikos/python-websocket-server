@@ -57,33 +57,31 @@ class TestServer(WebsocketServer):
 
 
 @pytest.fixture(scope='function')
-def server():
+def threaded_server():
     """ Returns the response of a server after"""
-    s = TestServer(0, loglevel=logging.DEBUG)
-    server_thread = Thread(target=s.run_forever)
-    server_thread.daemon = True
-    server_thread.start()
-    yield s
-    s.server_close()
+    server = TestServer(0, loglevel=logging.DEBUG)
+    server.run_forever(threaded=True)
+    yield server
+    server.server_close()
 
 
 @pytest.fixture
-def session(server):
+def session(threaded_server):
     """
     Gives a simple connection to a server
     """
-    conn = websocket.create_connection("ws://{}:{}".format(*server.server_address))
-    yield conn, server
+    conn = websocket.create_connection("ws://{}:{}".format(*threaded_server.server_address))
+    yield conn, threaded_server
     conn.close()
 
 
 @pytest.fixture
-def client_session(server):
+def client_session(threaded_server):
     """
     Gives a TestClient instance connected to a server
     """
-    client = TestClient(port=server.port)
+    client = TestClient(port=threaded_server.port)
     sleep(1)
     assert client.ws.sock and client.ws.sock.connected
-    yield client, server
+    yield client, threaded_server
     client.ws.close()
