@@ -1,5 +1,8 @@
 from utils import session, client_session, server
 from time import sleep
+import threading
+
+from websocket_server import WebsocketServer
 
 import websocket
 import pytest
@@ -36,6 +39,16 @@ def test_shutdown_gracefully(client_session):
     assert not client.ws.sock
     assert server.socket.fileno() == -1
     assert not server.clients
+
+
+def test_run_forever_threaded():
+    server = WebsocketServer(port=9999)
+    assert server.thread == None
+
+    # Run threaded
+    server.run_forever(threaded=True)
+    assert server.thread
+    assert not isinstance(server.thread, threading._MainThread)
 
 
 def test_shutdown_abruptly(client_session):

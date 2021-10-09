@@ -9,6 +9,7 @@ from hashlib import sha1
 import logging
 from socket import error as SocketError
 import errno
+from websocket_server.thread import WebsocketServerThread
 
 from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
 
@@ -51,16 +52,8 @@ DEFAULT_CLOSE_REASON = bytes('', encoding='utf-8')
 
 class API():
 
-    def run_forever(self):
-        try:
-            logger.info("Listening on port %d for clients.." % self.port)
-            self.serve_forever()
-        except KeyboardInterrupt:
-            self.server_close()
-            logger.info("Server terminated.")
-        except Exception as e:
-            logger.error(str(e), exc_info=True)
-            exit(1)
+    def run_forever(self, threaded=False):
+        return self._run_forever(threaded)
 
     def new_client(self, client, server):
         pass
@@ -128,6 +121,27 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
         self.clients = []
         self.id_counter = 0
+        self.thread = None
+
+    def _run_forever(self, threaded):
+        cls_name = self.__class__.__name__
+        try:
+            logger.info("Listening on port %d for clients.." % self.port)
+            if threaded:
+                self.daemon = True
+                self.thread = WebsocketServerThread(target=super().serve_forever, daemon=True, logger=logger)
+                logger.info(f"Starting {cls_name} on thread {self.thread.getName()}.")
+                self.thread.start()
+            else:
+                self.thread = threading.current_thread()
+                logger.info(f"Starting {cls_name} on main thread.")
+                super().serve_forever()
+        except KeyboardInterrupt:
+            self.server_close()
+            logger.info("Server terminated.")
+        except Exception as e:
+            logger.error(str(e), exc_info=True)
+            sys.exit(1)
 
     def _message_received_(self, handler, msg):
         self.message_received(self.handler_to_client(handler), self, msg)
