@@ -1,4 +1,4 @@
-from utils import session, server
+from utils import session, threaded_server
 
 
 def test_text_message_of_length_1(session):
