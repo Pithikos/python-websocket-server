@@ -202,6 +202,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
         self._terminate_client_handlers()
         self.server_close()
+        self.shutdown()
 
     def _shutdown_abruptly(self):
         """
@@ -210,6 +211,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.keep_alive = False
         self._terminate_client_handlers()
         self.server_close()
+        self.shutdown()
 
 
 class WebSocketHandler(StreamRequestHandler):

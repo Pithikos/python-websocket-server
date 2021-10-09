@@ -41,7 +41,7 @@ def test_shutdown_gracefully(client_session):
     assert not server.clients
 
 
-class TestServerThreaded():
+class TestServerThreadedWithoutClient():
     def test_run_forever(self, threaded_server):
         assert threaded_server.thread
         assert not isinstance(threaded_server.thread, threading._MainThread)
@@ -49,8 +49,26 @@ class TestServerThreaded():
 
     def test_shutdown(self, threaded_server):
         assert threaded_server.thread.is_alive()
+
+        # Shutdown de-facto way
+        # REF: https://docs.python.org/3/library/socketserver.html
+        #    "Tell the serve_forever() loop to stop and
+        #     wait until it does. shutdown() must be called while serve_forever()
+        #     is running in a different thread otherwise it will deadlock."
         threaded_server.shutdown()
         assert not threaded_server.thread.is_alive()
+
+    def test_shutdown_gracefully_without_clients(self, threaded_server):
+        assert threaded_server.thread.is_alive()
+        threaded_server.shutdown_gracefully()
+        assert not threaded_server.thread.is_alive()
+        assert threaded_server.socket.fileno() <= 0
+
+    def test_shutdown_abruptly_without_clients(self, threaded_server):
+        assert threaded_server.thread.is_alive()
+        threaded_server.shutdown_abruptly()
+        assert not threaded_server.thread.is_alive()
+        assert threaded_server.socket.fileno() <= 0
 
 
 def test_shutdown_abruptly(client_session):
