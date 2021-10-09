@@ -9,9 +9,10 @@ from hashlib import sha1
 import logging
 from socket import error as SocketError
 import errno
-from websocket_server.thread import WebsocketServerThread
-
+import threading
 from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
+
+from websocket_server.thread import WebsocketServerThread
 
 logger = logging.getLogger(__name__)
 logging.basicConfig()
