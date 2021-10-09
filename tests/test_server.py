@@ -42,24 +42,15 @@ def test_shutdown_gracefully(client_session):
 
 
 class TestServerThreaded():
-    def test_run_forever(self):
-        server = WebsocketServer(port=0)
-        assert server.thread == None
+    def test_run_forever(self, threaded_server):
+        assert threaded_server.thread
+        assert not isinstance(threaded_server.thread, threading._MainThread)
+        assert threaded_server.thread.is_alive()
 
-        # Run threaded
-        server.run_forever(threaded=True)
-        assert server.thread
-        assert not isinstance(server.thread, threading._MainThread)
-        assert server.thread.is_alive()
-
-    def test_shutdown(self):
-        server = WebsocketServer(port=0)
-        server.run_forever(threaded=True)
-        assert server.thread.is_alive()
-
-        # Shutdown de-facto way
-        server.shutdown()
-        assert not server.thread.is_alive()
+    def test_shutdown(self, threaded_server):
+        assert threaded_server.thread.is_alive()
+        threaded_server.shutdown()
+        assert not threaded_server.thread.is_alive()
 
 
 def test_shutdown_abruptly(client_session):
