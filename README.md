@@ -5,7 +5,7 @@ Websocket Server
 
 A minimal Websockets Server in Python with no external dependencies.
 
-  * Python3.5+
+  * Python3.6+
   * Clean simple API
   * Multiple clients
   * No dependencies
@@ -39,7 +39,7 @@ Testing
 
 Run all tests
 
-    tox
+    pytest
 
 
 API

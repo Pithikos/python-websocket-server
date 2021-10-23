@@ -12,7 +12,7 @@ except ImportError:
     from distutils.command.install import install
 
 
-VERSION = '0.5.5'
+VERSION = '0.5.6'
 
 
 def get_tag_version():
@@ -53,4 +53,5 @@ setup(
     cmdclass={
         'verify': VerifyVersionCommand,
     },
+    python_requires=">=3.6",
 )

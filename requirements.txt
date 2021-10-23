@@ -1,5 +1,4 @@
 # Dev/test/deploy
-tox>=3.24.0
 IPython
 pytest
 websocket-client>=1.1.1

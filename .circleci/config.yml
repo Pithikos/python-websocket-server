@@ -6,9 +6,13 @@ orbs:
 jobs:
   test:
     docker:
-      - image: circleci/python:3
+      - image: circleci/python:3.7
     steps:
       - checkout
+      - run:
+          name: install dependencies
+          command: |
+            pip install -r requirements.txt
       - run:
           name: run tests
           command: |
@@ -45,6 +49,7 @@ jobs:
           command: |
             tag=`git tag --points-at HEAD`
             if [ $tag ]; then
+              echo Uploading
               python -m twine upload dist/*
             fi
 
