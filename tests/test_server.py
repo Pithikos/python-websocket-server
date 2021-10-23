@@ -1,8 +1,5 @@
-from utils import session, client_session, threaded_server
 from time import sleep
 import threading
-
-from websocket_server import WebsocketServer
 
 import websocket
 import pytest

@@ -1,7 +1,3 @@
-import _bootstrap_
-from utils import session, threaded_server
-
-
 def test_text_message_of_length_1(session):
     conn, server = session
     server.send_message_to_all('$')
