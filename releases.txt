@@ -14,3 +14,7 @@
 
 0.5.6
 - Support from Python3.6+
+
+0.6.0
+- Change order of params 'host' and 'port'
+- Add host attribute to server
