@@ -112,9 +112,10 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
     allow_reuse_address = True
     daemon_threads = True  # comment to keep threads alive until finished
 
-    def __init__(self, port, host='127.0.0.1', loglevel=logging.WARNING, key=None, cert=None):
+    def __init__(self, host='127.0.0.1', port=0, loglevel=logging.WARNING, key=None, cert=None):
         logger.setLevel(loglevel)
         TCPServer.__init__(self, (host, port), WebSocketHandler)
+        self.host = host
         self.port = self.socket.getsockname()[1]
 
         self.key = key

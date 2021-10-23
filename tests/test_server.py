@@ -1,8 +1,5 @@
-from utils import session, client_session, threaded_server
 from time import sleep
 import threading
-
-from websocket_server import WebsocketServer
 
 import websocket
 import pytest
@@ -13,6 +10,11 @@ class TestServerThreadedWithoutClient():
         assert threaded_server.thread
         assert not isinstance(threaded_server.thread, threading._MainThread)
         assert threaded_server.thread.is_alive()
+
+    def test_attributes(self, threaded_server):
+        tpl = threaded_server.server_address
+        assert threaded_server.port == tpl[1]
+        assert threaded_server.host == tpl[0]
 
     def test_shutdown(self, threaded_server):
         assert threaded_server.thread.is_alive()

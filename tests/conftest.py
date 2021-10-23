@@ -5,7 +5,12 @@ from threading import Thread
 import pytest
 import websocket # websocket-client
 
-import _bootstrap_
+# Add path to source code
+import sys, os
+if os.getcwd().endswith('tests'):
+	sys.path.insert(0, '..')
+elif os.path.exists('websocket_server'):
+	sys.path.insert(0, '.')
 from websocket_server import WebsocketServer
 
 
@@ -59,7 +64,7 @@ class TestServer(WebsocketServer):
 @pytest.fixture(scope='function')
 def threaded_server():
     """ Returns the response of a server after"""
-    server = TestServer(0, loglevel=logging.DEBUG)
+    server = TestServer(loglevel=logging.DEBUG)
     server.run_forever(threaded=True)
     yield server
     server.server_close()
