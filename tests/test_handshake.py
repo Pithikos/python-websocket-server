@@ -1,4 +1,3 @@
-import _bootstrap_
 from websocket_server import WebSocketHandler
 
 
