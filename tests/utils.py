@@ -59,7 +59,7 @@ class TestServer(WebsocketServer):
 @pytest.fixture(scope='function')
 def threaded_server():
     """ Returns the response of a server after"""
-    server = TestServer(0, loglevel=logging.DEBUG)
+    server = TestServer(loglevel=logging.DEBUG)
     server.run_forever(threaded=True)
     yield server
     server.server_close()

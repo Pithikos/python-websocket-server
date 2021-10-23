@@ -12,7 +12,7 @@ from websocket_server import WebsocketServer
 @pytest.fixture(scope='function')
 def server():
     """ Returns the response of a server after"""
-    s = WebsocketServer(0, loglevel=logging.DEBUG)
+    s = WebsocketServer(loglevel=logging.DEBUG)
     server_thread = Thread(target=s.run_forever)
     server_thread.daemon = True
     server_thread.start()
