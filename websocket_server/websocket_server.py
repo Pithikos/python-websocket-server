@@ -11,6 +11,8 @@ from socket import error as SocketError
 import errno
 import threading
 from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
+from collections import defaultdict
+import json
 
 from websocket_server.thread import WebsocketServerThread
 
@@ -65,6 +67,12 @@ class API():
     def message_received(self, client, server, message):
         pass
 
+    def client_subbed(self, client, server, service):
+        pass
+
+    def client_unsubbed(self, client, server, service):
+        pass
+
     def set_fn_new_client(self, fn):
         self.new_client = fn
 
@@ -74,11 +82,20 @@ class API():
     def set_fn_message_received(self, fn):
         self.message_received = fn
 
+    def set_fn_client_subbed(self, fn):
+        self.client_subbed = fn
+
+    def set_fn_client_unsubbed(self, fn):
+        self.client_unsubbed = fn
+
     def send_message(self, client, msg):
         self._unicast(client, msg)
 
     def send_message_to_all(self, msg):
         self._multicast(msg)
+
+    def publish(self, service, msg):
+        self._publish(service, msg)
 
     def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
         self._shutdown_gracefully(status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON)
@@ -122,6 +139,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.cert = cert
 
         self.clients = []
+        self.subscriptions = defaultdict(list)
         self.id_counter = 0
         self.thread = None
 
@@ -146,6 +164,19 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             sys.exit(1)
 
     def _message_received_(self, handler, msg):
+        try:
+            json_message = json.loads(msg)
+            if "subscribe" in json_message:
+                self._client_sub(self.handler_to_client(handler), json_message["subscribe"])
+                return
+
+            elif "unsubscribe" in json_message:
+                self._client_unsub(self.handler_to_client(handler), json_message["unsubscribe"])
+                return
+
+        except Exception as e:
+            logger.warn(e)
+
         self.message_received(self.handler_to_client(handler), self, msg)
 
     def _ping_received_(self, handler, msg):
@@ -169,12 +200,33 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.client_left(client, self)
         if client in self.clients:
             self.clients.remove(client)
+            for service in self.subscriptions:
+                try:
+                    self._client_unsub(client, service)
+                except:
+                    pass
 
+    def _client_sub(self, client, service):
+        self.subscriptions[service].append(client)
+        self.client_subbed(client, self, service)
+
+    def _client_unsub(self, client, service):
+        try:
+            self.subscriptions[service].remove(client)
+            self.client_unsubbed(client, self, service)
+        except:
+            pass
+        
     def _unicast(self, receiver_client, msg):
+        logger.info(f"sending to {receiver_client['id']}")
         receiver_client['handler'].send_message(msg)
 
     def _multicast(self, msg):
         for client in self.clients:
+            self._unicast(client, msg)
+
+    def _publish(self, service, msg):
+        for client in self.subscriptions[service]:
             self._unicast(client, msg)
 
     def handler_to_client(self, handler):
