@@ -64,33 +64,38 @@ The WebsocketServer can be initialized with the below parameters.
 
 ### Properties
 
-| Property | Description          |
-|----------|----------------------|
-| clients  | A list of `client`   |
+| Property       | Description                                                         |
+|----------------|---------------------------------------------------------------------|
+| clients        | A list of `client`                                                  |
+| subscriptions  | A dict of services, with each service containing a list of `client` |
 
 
 ### Methods
 
-| Method                      | Description                                                                           | Takes           | Gives |
-|-----------------------------|---------------------------------------------------------------------------------------|-----------------|-------|
-| `run_forever()`       | Runs server until shutdown_gracefully or shutdown_abruptly are called.  | threaded: run server on its own thread if True        | None  |
-| `set_fn_new_client()`       | Sets a callback function that will be called for every new `client` connecting to us  | function        | None  |
-| `set_fn_client_left()`      | Sets a callback function that will be called for every `client` disconnecting from us | function        | None  |
-| `set_fn_message_received()` | Sets a callback function that will be called when a `client` sends a message          | function        | None  |
-| `send_message()`            | Sends a `message` to a specific `client`. The message is a simple string.             | client, message | None  |
-| `send_message_to_all()`     | Sends a `message` to **all** connected clients. The message is a simple string.       | message         | None  |
-| `shutdown_gracefully()`     | Shutdown server by sending a websocket CLOSE handshake to all connected clients.      | None            | None  |
-| `shutdown_abruptly()`       | Shutdown server without sending any websocket CLOSE handshake.                        | None            | None  |
+| Method                      | Description                                                                                  | Takes           | Gives |
+|-----------------------------|----------------------------------------------------------------------------------------------|-----------------|-------|
+| `run_forever()`             | Runs server until shutdown_gracefully or shutdown_abruptly are called.  | threaded: run server on its own thread if True        | None  |
+| `set_fn_new_client()`       | Sets a callback function that will be called for every new `client` connecting to us         | function        | None  |
+| `set_fn_client_left()`      | Sets a callback function that will be called for every `client` disconnecting from us        | function        | None  |
+| `set_fn_message_received()` | Sets a callback function that will be called when a `client` sends a message                 | function        | None  |
+| `set_fn_client_subbed()`    | Sets a callback function that will be called for every `client` subscribing to a service     | function        | None  |
+| `set_fn_client_unsubbed()`  | Sets a callback function that will be called for every `client` unsubscribing to a service   | function        | None  |
+| `send_message()`            | Sends a `message` to a specific `client`. The message is a simple string.                    | client, message | None  |
+| `send_message_to_all()`     | Sends a `message` to **all** connected clients. The message is a simple string.              | message         | None  |
+| `shutdown_gracefully()`     | Shutdown server by sending a websocket CLOSE handshake to all connected clients.             | None            | None  |
+| `shutdown_abruptly()`       | Shutdown server without sending any websocket CLOSE handshake.                               | None            | None  |
 
 
 
 ### Callback functions
 
-| Set by                      | Description                                       | Parameters              |
-|-----------------------------|---------------------------------------------------|-------------------------|
-| `set_fn_new_client()`       | Called for every new `client` connecting to us    | client, server          |
-| `set_fn_client_left()`      | Called for every `client` disconnecting from us   | client, server          |
-| `set_fn_message_received()` | Called when a `client` sends a `message`          | client, server, message |
+| Set by                      | Description                                                 | Parameters              |
+|-----------------------------|-------------------------------------------------------------|-------------------------|
+| `set_fn_new_client()`       | Called for every new `client` connecting to us              | client, server          |
+| `set_fn_client_left()`      | Called for every `client` disconnecting from us             | client, server          |
+| `set_fn_client_subbed()`    | Called for every new `client` subscribing to a service      | client, server, service |
+| `set_fn_client_unsubbed()`  | Called for every new `client` unsubscribing to a service    | client, server, service |
+| `set_fn_message_received()` | Called when a `client` sends a `message`                    | client, server, message |
 
 
 The client passed to the callback is the client that left, sent the message, etc. The server might not have any use to use. However it is passed in case you want to send messages to clients.
