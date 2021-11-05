@@ -218,7 +218,6 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             pass
         
     def _unicast(self, receiver_client, msg):
-        logger.info(f"sending to {receiver_client['id']}")
         receiver_client['handler'].send_message(msg)
 
     def _multicast(self, msg):
