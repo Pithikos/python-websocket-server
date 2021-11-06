@@ -174,8 +174,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 self._client_unsub(self.handler_to_client(handler), json_message["unsubscribe"])
                 return
 
-        except Exception as e:
-            logger.warn(e)
+        except:
+            pass
 
         self.message_received(self.handler_to_client(handler), self, msg)
 
