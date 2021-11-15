@@ -10,9 +10,7 @@ A minimal Websockets Server in Python with no external dependencies.
   * Multiple clients
   * No dependencies
 
-Notice that this implementation does not support the more advanced features
-like multithreading etc. The project is focused mainly on making it easy to run a
-websocket server for prototyping, testing or for making a GUI for your application.
+Notice this project is focused mainly on making it easy to run a websocket server for prototyping, testing or for making a GUI for your application. Thus not all possible features of Websockets are supported.
 
 
 Installation
