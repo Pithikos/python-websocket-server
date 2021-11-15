@@ -219,6 +219,8 @@ class WebSocketHandler(StreamRequestHandler):
 
     def __init__(self, socket, addr, server):
         self.server = server
+        assert not hasattr(self, "_send_lock"), "_send_lock already exists"
+        self._send_lock = threading.Lock()
         if server.key and server.cert:
             try:
                 socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
@@ -321,7 +323,8 @@ class WebSocketHandler(StreamRequestHandler):
         # Send CLOSE with status & reason
         header.append(FIN | OPCODE_CLOSE_CONN)
         header.append(payload_length)
-        self.request.send(header + payload)
+        with self._send_lock:
+            self.request.send(header + payload)
 
     def send_text(self, message, opcode=OPCODE_TEXT):
         """
@@ -364,7 +367,8 @@ class WebSocketHandler(StreamRequestHandler):
             raise Exception("Message is too big. Consider breaking it into chunks.")
             return
 
-        self.request.send(header + payload)
+        with self._send_lock:
+            self.request.send(header + payload)
 
     def read_http_headers(self):
         headers = {}
@@ -397,7 +401,8 @@ class WebSocketHandler(StreamRequestHandler):
             return
 
         response = self.make_handshake_response(key)
-        self.handshake_done = self.request.send(response.encode())
+        with self._send_lock:
+            self.handshake_done = self.request.send(response.encode())
         self.valid_client = True
         self.server._new_client_(self)
 
