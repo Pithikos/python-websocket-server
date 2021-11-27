@@ -86,6 +86,12 @@ class API():
     def shutdown_abruptly(self):
         self._shutdown_abruptly()
 
+    def disconnect_clients_gracefully(self):
+        self._disconnect_clients_gracefully()
+
+    def disconnect_clients_abruptly(self):
+        self._disconnect_clients_abruptly()
+
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
@@ -196,12 +202,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         Send a CLOSE handshake to all connected clients before terminating server
         """
         self.keep_alive = False
-
-        # Send CLOSE to clients
-        for client in self.clients:
-            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
-
-        self._terminate_client_handlers()
+        self._disconnect_clients_gracefully(status, reason)
         self.server_close()
         self.shutdown()
 
@@ -210,9 +211,23 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         Terminate server without sending a CLOSE handshake
         """
         self.keep_alive = False
-        self._terminate_client_handlers()
+        self._disconnect_clients_abruptly()
         self.server_close()
         self.shutdown()
+
+    def _disconnect_clients_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        """
+        Terminate clients gracefully without shutting down the server
+        """
+        for client in self.clients:
+            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
+        self._terminate_client_handlers()
+
+    def _disconnect_clients_abruptly(self):
+        """
+        Terminate clients abruptly (no CLOSE handshake) without shutting down the server
+        """
+        self._terminate_client_handlers()
 
 
 class WebSocketHandler(StreamRequestHandler):
