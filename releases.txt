@@ -21,3 +21,6 @@
 
 0.6.1
 - Sending data is now thread-safe
+
+0.6.2
+- Add API for disconnecting clients

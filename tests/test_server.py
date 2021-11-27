@@ -115,3 +115,29 @@ class TestServerThreadedWithClient():
         assert not server.clients
         with pytest.raises(BrokenPipeError):
             old_client_handler.connection.send(b"test")
+
+    def test_disconnect_clients_abruptly(self, session):
+        client, server = session
+        assert client.connected
+        assert server.clients
+        server.disconnect_clients_abruptly()
+        assert not server.clients
+
+        # Client won't be aware until trying to write more data
+        with pytest.raises(BrokenPipeError):
+            for i in range(3):
+                client.send("test")
+                sleep(0.2)
+
+    def test_disconnect_clients_gracefully(self, session):
+        client, server = session
+        assert client.connected
+        assert server.clients
+        server.disconnect_clients_gracefully()
+        assert not server.clients
+
+        # Client won't be aware until trying to write more data
+        with pytest.raises(BrokenPipeError):
+            for i in range(3):
+                client.send("test")
+                sleep(0.2)
