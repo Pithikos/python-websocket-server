@@ -24,3 +24,6 @@
 
 0.6.2
 - Add API for disconnecting clients
+
+0.6.3
+- Remove deprecation warnings
