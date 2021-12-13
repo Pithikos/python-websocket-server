@@ -240,7 +240,7 @@ class WebSocketHandler(StreamRequestHandler):
             try:
                 socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
             except: # Not sure which exception it throws if the key/cert isn't found
-                logger.warn("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
+                logger.warning("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
         StreamRequestHandler.__init__(self, socket, addr, server)
 
     def setup(self):
@@ -281,14 +281,14 @@ class WebSocketHandler(StreamRequestHandler):
             self.keep_alive = 0
             return
         if not masked:
-            logger.warn("Client must always be masked.")
+            logger.warning("Client must always be masked.")
             self.keep_alive = 0
             return
         if opcode == OPCODE_CONTINUATION:
-            logger.warn("Continuation frames are not supported.")
+            logger.warning("Continuation frames are not supported.")
             return
         elif opcode == OPCODE_BINARY:
-            logger.warn("Binary frames are not supported.")
+            logger.warning("Binary frames are not supported.")
             return
         elif opcode == OPCODE_TEXT:
             opcode_handler = self.server._message_received_
@@ -297,7 +297,7 @@ class WebSocketHandler(StreamRequestHandler):
         elif opcode == OPCODE_PONG:
             opcode_handler = self.server._pong_received_
         else:
-            logger.warn("Unknown opcode %#x." % opcode)
+            logger.warning("Unknown opcode %#x." % opcode)
             self.keep_alive = 0
             return
 
