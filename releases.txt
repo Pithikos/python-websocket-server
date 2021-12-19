@@ -27,3 +27,8 @@
 
 0.6.3
 - Remove deprecation warnings
+
+0.6.4
+- Add deny_new_connections & allow_new_connections
+- Fix disconnect_clients_gracefully to now take params
+- Fix shutdown_gracefully unused param
