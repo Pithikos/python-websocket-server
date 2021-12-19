@@ -220,7 +220,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         Terminate clients gracefully without shutting down the server
         """
         for client in self.clients:
-            client["handler"].send_close(CLOSE_STATUS_NORMAL, reason)
+            client["handler"].send_close(status, reason)
         self._terminate_client_handlers()
 
     def _disconnect_clients_abruptly(self):
