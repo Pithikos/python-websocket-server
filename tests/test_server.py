@@ -141,3 +141,19 @@ class TestServerThreadedWithClient():
             for i in range(3):
                 client.send("test")
                 sleep(0.2)
+
+    def test_deny_new_connections(self, threaded_server):
+        url = "ws://{}:{}".format(*threaded_server.server_address)
+        server = threaded_server
+        server.deny_new_connections(status=1013, reason=b"Please try re-connecting later")
+
+        conn = websocket.create_connection(url)
+        try:
+            conn.send("test")
+        except websocket.WebSocketProtocolException as e:
+            assert 'Invalid close opcode' in e.args[0]
+        assert not server.clients
+
+        server.allow_new_connections()
+        conn = websocket.create_connection(url)
+        conn.send("test")

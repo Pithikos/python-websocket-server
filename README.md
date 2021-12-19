@@ -81,9 +81,10 @@ The WebsocketServer can be initialized with the below parameters.
 | `send_message_to_all()`     | Sends a `message` to **all** connected clients. The message is a simple string.       | message         | None  |
 | `disconnect_clients_gracefully()` | Disconnect all connected clients by sending a websocket CLOSE handshake.        | Optional: status, reason | None  |
 | `disconnect_clients_abruptly()`   | Disconnect all connected clients. Clients won't be aware until they try to send some data. | None | None  |
-| `shutdown_gracefully()`     | Disconnect clients with a CLOSE handshake and shutdown server.      | Optional: status, reason | None  |
-| `shutdown_abruptly()`       | Disconnect clients and shutdown server with no handshake.      | None            | None  |
-
+| `shutdown_gracefully()`     | Disconnect clients with a CLOSE handshake and shutdown server. | Optional: status, reason      | None  |
+| `shutdown_abruptly()`       | Disconnect clients and shutdown server with no handshake.      | None                          | None  |
+| `deny_new_connections()`    | Close connection for new clients.                              | Optional: status, reason      | None  |
+| `allow_new_connections()`   | Allows back connection for new clients.                        |                               | None  |
 
 
 ### Callback functions

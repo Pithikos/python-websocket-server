@@ -80,6 +80,12 @@ class API():
     def send_message_to_all(self, msg):
         self._multicast(msg)
 
+    def deny_new_connections(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        self._deny_new_connections(status, reason)
+
+    def allow_new_connections(self):
+        self._allow_new_connections()
+
     def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
         self._shutdown_gracefully(status, reason)
 
@@ -131,6 +137,8 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         self.id_counter = 0
         self.thread = None
 
+        self._deny_clients = False
+
     def _run_forever(self, threaded):
         cls_name = self.__class__.__name__
         try:
@@ -161,6 +169,13 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         pass
 
     def _new_client_(self, handler):
+        if self._deny_clients:
+            status = self._deny_clients["status"]
+            reason = self._deny_clients["reason"]
+            handler.send_close(status, reason)
+            self._terminate_client_handler(handler)
+            return
+
         self.id_counter += 1
         client = {
             'id': self.id_counter,
@@ -188,14 +203,17 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             if client['handler'] == handler:
                 return client
 
+    def _terminate_client_handler(self, handler):
+        handler.keep_alive = False
+        handler.finish()
+        handler.connection.close()
+
     def _terminate_client_handlers(self):
         """
         Ensures request handler for each client is terminated correctly
         """
         for client in self.clients:
-            client["handler"].keep_alive = False
-            client["handler"].finish()
-            client["handler"].connection.close()
+            self._terminate_client_handler(client["handler"])
 
     def _shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
         """
@@ -228,6 +246,15 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         Terminate clients abruptly (no CLOSE handshake) without shutting down the server
         """
         self._terminate_client_handlers()
+
+    def _deny_new_connections(self, status, reason):
+        self._deny_clients = {
+            "status": status,
+            "reason": reason,
+        }
+
+    def _allow_new_connections(self):
+        self._deny_clients = False
 
 
 class WebSocketHandler(StreamRequestHandler):
