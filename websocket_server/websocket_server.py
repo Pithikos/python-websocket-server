@@ -81,13 +81,13 @@ class API():
         self._multicast(msg)
 
     def shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
-        self._shutdown_gracefully(status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON)
+        self._shutdown_gracefully(status, reason)
 
     def shutdown_abruptly(self):
         self._shutdown_abruptly()
 
-    def disconnect_clients_gracefully(self):
-        self._disconnect_clients_gracefully()
+    def disconnect_clients_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        self._disconnect_clients_gracefully(status, reason)
 
     def disconnect_clients_abruptly(self):
         self._disconnect_clients_abruptly()
