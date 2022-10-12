@@ -98,6 +98,12 @@ class API():
     def disconnect_clients_abruptly(self):
         self._disconnect_clients_abruptly()
 
+    def disconnect_client_gracefully(self, client, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):
+        self._disconnect_client_gracefully(client, status, reason)
+
+    def disconnect_client_abruptly(self, client):
+        self._disconnect_client_abruptly(client)
+
 
 class WebsocketServer(ThreadingMixIn, TCPServer, API):
     """
@@ -246,6 +252,33 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         Terminate clients abruptly (no CLOSE handshake) without shutting down the server
         """
         self._terminate_client_handlers()
+
+    def _disconnect_client_gracefully(self, client, status, reason):
+        """
+        Terminate a client gracefully without shutting down the server
+        """
+        for cl in self.clients:
+            if cl["id"] == client["id"]:
+                self._client_left_(client["handler"])
+                client["handler"].send_close(status, reason)
+                return
+
+        raise "Client does not exist/was not found"
+
+    def _disconnect_client_abruptly(self, client):
+        """
+        Terminate client abruptly (no CLOSE handshake) without shutting down the server
+        """
+        for cl in self.clients:
+            if cl["id"] == client["id"]:
+                self._client_left_(client["handler"])
+                client["handler"].keep_alive = False
+                client["handler"].finish()
+                client["handler"].connection.close()
+                return
+
+        raise "Client does not exist/was not found"
+
 
     def _deny_new_connections(self, status, reason):
         self._deny_clients = {
