@@ -263,7 +263,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 client["handler"].send_close(status, reason)
                 return
 
-        raise "Client does not exist/was not found"
+        logger.error("Client does not exist/was not found")
 
     def _disconnect_client_abruptly(self, client):
         """
@@ -277,7 +277,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
                 client["handler"].connection.close()
                 return
 
-        raise "Client does not exist/was not found"
+        logger.error("Client does not exist/was not found")
 
 
     def _deny_new_connections(self, status, reason):
