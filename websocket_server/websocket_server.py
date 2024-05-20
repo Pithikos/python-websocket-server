@@ -62,7 +62,7 @@ class API():
     def client_left(self, client, server):
         pass
 
-    def message_received(self, client, server, message):
+    def message_received(self, client, server, message, args=None):
         pass
 
     def set_fn_new_client(self, fn):
@@ -71,8 +71,9 @@ class API():
     def set_fn_client_left(self, fn):
         self.client_left = fn
 
-    def set_fn_message_received(self, fn):
+    def set_fn_message_received(self, fn, args=None):
         self.message_received = fn
+        self.message_received_args = args
 
     def send_message(self, client, msg):
         self._unicast(client, msg)
@@ -160,7 +161,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
             sys.exit(1)
 
     def _message_received_(self, handler, msg):
-        self.message_received(self.handler_to_client(handler), self, msg)
+        self.message_received(self.handler_to_client(handler), self, msg, self.message_received_args)
 
     def _ping_received_(self, handler, msg):
         handler.send_pong(msg)
