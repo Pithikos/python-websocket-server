@@ -14,6 +14,8 @@ from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
 
 from websocket_server.thread import WebsocketServerThread
 
+from typing import Callable
+
 logger = logging.getLogger(__name__)
 logging.basicConfig()
 
@@ -52,7 +54,6 @@ DEFAULT_CLOSE_REASON = bytes('', encoding='utf-8')
 
 
 class API():
-
     def run_forever(self, threaded=False):
         return self._run_forever(threaded)
 
@@ -64,14 +65,32 @@ class API():
 
     def message_received(self, client, server, message):
         pass
+    
+    def on_new_client(self):
+        def decorator(func: Callable):
+            self.set_fn_new_client(func)
+            
+        return decorator
+        
+    def on_client_left(self):
+        def decorator(func: Callable):
+            self.set_fn_client_left(func)
+            
+        return decorator
+        
+    def on_message_received(self):
+        def decorator(func: Callable):
+            self.set_fn_message_received(func)
+            
+        return decorator
 
-    def set_fn_new_client(self, fn):
+    def set_fn_new_client(self, fn: Callable):
         self.new_client = fn
 
-    def set_fn_client_left(self, fn):
+    def set_fn_client_left(self, fn: Callable):
         self.client_left = fn
 
-    def set_fn_message_received(self, fn):
+    def set_fn_message_received(self, fn: Callable):
         self.message_received = fn
 
     def send_message(self, client, msg):
