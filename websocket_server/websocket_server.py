@@ -265,9 +265,13 @@ class WebSocketHandler(StreamRequestHandler):
         self._send_lock = threading.Lock()
         if server.key and server.cert:
             try:
-                socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
-            except: # Not sure which exception it throws if the key/cert isn't found
-                logger.warning("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
+                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                ssl_context.load_cert_chain(certfile=server.cert, keyfile=server.key)
+                socket = ssl_context.wrap_socket(socket, server_side=True)
+            except FileNotFoundError:
+                logger.warning("SSL key or certificate file not found. Please check the paths for the key and cert.")
+            except ssl.SSLError as e:
+                logger.warning(f"SSL error occurred: {e}")
         StreamRequestHandler.__init__(self, socket, addr, server)
 
     def setup(self):
