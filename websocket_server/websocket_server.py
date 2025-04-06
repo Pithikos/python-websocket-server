@@ -187,9 +187,9 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 
     def _client_left_(self, handler):
         client = self.handler_to_client(handler)
-        self.client_left(client, self)
         if client in self.clients:
             self.clients.remove(client)
+        self.client_left(client, self)
 
     def _unicast(self, receiver_client, msg):
         receiver_client['handler'].send_message(msg)
