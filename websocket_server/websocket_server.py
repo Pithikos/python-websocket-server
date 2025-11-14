@@ -11,6 +11,7 @@ from socket import error as SocketError
 import errno
 import threading
 from socketserver import ThreadingMixIn, TCPServer, StreamRequestHandler
+from urllib.parse import urlparse, parse_qs
 
 from websocket_server.thread import WebsocketServerThread
 
@@ -261,6 +262,8 @@ class WebSocketHandler(StreamRequestHandler):
 
     def __init__(self, socket, addr, server):
         self.server = server
+        self.headers = {}
+        self.query_params = {}
         assert not hasattr(self, "_send_lock"), "_send_lock already exists"
         self._send_lock = threading.Lock()
         if server.key and server.cert:
@@ -416,6 +419,16 @@ class WebSocketHandler(StreamRequestHandler):
         with self._send_lock:
             self.request.send(header + payload)
 
+    @staticmethod
+    def parse_query(http_get):
+        """
+        Parses the query parameters from the first line.
+        Example: "GET /?q=hello HTTP/1.1" will be parsed to {'q': ['hello']}
+        """
+        query = http_get.split(" ")[1]  # example: http_get = "GET /?q=hello HTTP/1.1"
+        parsed_url = urlparse(query)
+        return parse_qs(parsed_url.query)
+
     def read_http_headers(self):
         headers = {}
         # first line should be HTTP GET
@@ -428,6 +441,8 @@ class WebSocketHandler(StreamRequestHandler):
                 break
             head, value = header.split(':', 1)
             headers[head.lower().strip()] = value.strip()
+        self.headers = headers
+        self.query_params = WebSocketHandler.parse_query(http_get)
         return headers
 
     def handshake(self):
