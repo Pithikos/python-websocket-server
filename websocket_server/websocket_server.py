@@ -212,7 +212,7 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
         """
         Ensures request handler for each client is terminated correctly
         """
-        for client in self.clients:
+        for client in self.clients[:]:
             self._terminate_client_handler(client["handler"])
 
     def _shutdown_gracefully(self, status=CLOSE_STATUS_NORMAL, reason=DEFAULT_CLOSE_REASON):

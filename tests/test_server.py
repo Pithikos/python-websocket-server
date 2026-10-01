@@ -1,8 +1,42 @@
 from time import sleep
 import threading
+from unittest.mock import Mock
 
 import websocket
 import pytest
+
+from websocket_server import WebsocketServer
+
+
+@pytest.mark.parametrize('client_count', [0, 1, 2, 3, 4, 5])
+@pytest.mark.parametrize('graceful', [False, True])
+def test_disconnect_all_clients(client_count, graceful):
+    with WebsocketServer() as server:
+        disconnected = []
+        server.set_fn_client_left(lambda client, _: disconnected.append(client))
+        handlers = []
+        for client_id in range(client_count):
+            handler = Mock()
+            handler.finish.side_effect = lambda h=handler: server._client_left_(h)
+            handlers.append(handler)
+            server.clients.append({'id': client_id, 'handler': handler})
+
+        clients = server.clients[:]
+        if graceful:
+            server.disconnect_clients_gracefully(status=1001, reason=b'shutdown')
+        else:
+            server.disconnect_clients_abruptly()
+
+        assert server.clients == []
+        assert disconnected == clients
+        for handler in handlers:
+            assert handler.keep_alive is False
+            handler.finish.assert_called_once_with()
+            handler.connection.close.assert_called_once_with()
+            if graceful:
+                handler.send_close.assert_called_once_with(1001, b'shutdown')
+            else:
+                handler.send_close.assert_not_called()
 
 
 class TestServerThreadedWithoutClient():
